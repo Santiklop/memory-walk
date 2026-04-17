@@ -319,7 +319,7 @@ class MainScene extends Phaser.Scene {
       tint: [0xFFD86B, 0xFF6B9D, 0x7DD3FC, 0xC4B5FD, 0x86EFAC, 0xFFFFFF],
       frequency: 45,
     }).setScrollFactor(0).setDepth(999);
-    this.time.delayedCall(8500, () => confetti.destroy());
+    // keep confetti falling forever — celebratory backdrop for the walk back
   }
 
   _ensureConfettiTex() {
