@@ -2,17 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Happy Birthday, Katya</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Memory Walk</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="game-container"></div>
   <div id="hint">← → to move · SPACE to jump</div>
 
+  <div id="touch-controls">
+    <div class="tc-group tc-left">
+      <button id="btn-left" class="tbtn" aria-label="Move left">
+        <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+          <path d="M15 5 L7 12 L15 19" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="btn-right" class="tbtn" aria-label="Move right">
+        <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+          <path d="M9 5 L17 12 L9 19" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="tc-group tc-right">
+      <button id="btn-jump" class="tbtn jump" aria-label="Jump">
+        <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+          <path d="M12 5 L12 19 M5 12 L12 5 L19 12" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 
   <!-- game source -->
+  <script src="src/touch.js"></script>
   <script src="src/milestones.js"></script>
   <script src="src/palette.js"></script>
   <script src="src/background.js"></script>

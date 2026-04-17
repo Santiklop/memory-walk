@@ -7,6 +7,10 @@ html, body {
   background: #0a0a0f;
   font-family: 'Georgia', 'Times New Roman', serif;
   color: #fff;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -37,4 +41,68 @@ body {
 
 canvas {
   display: block;
+}
+
+/* --- Touch controls --- */
+#touch-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(18px, env(safe-area-inset-bottom, 18px));
+  padding: 0 24px;
+  display: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.tc-group {
+  display: flex;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.tbtn {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(20, 20, 30, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+  transition: transform 60ms ease, background 120ms ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.tbtn:active,
+.tbtn.is-down {
+  transform: scale(0.92);
+  background: rgba(255, 216, 107, 0.35);
+  border-color: rgba(255, 216, 107, 0.9);
+}
+
+.tbtn.jump {
+  width: 92px;
+  height: 92px;
+  background: rgba(255, 107, 157, 0.35);
+  border-color: rgba(255, 200, 220, 0.8);
+}
+
+.tbtn.jump:active,
+.tbtn.jump.is-down {
+  background: rgba(255, 216, 107, 0.55);
+}
+
+/* Show touch controls only on coarse pointers (phones / tablets) */
+@media (pointer: coarse) {
+  #touch-controls { display: flex; }
+  #hint { display: none; }
 }

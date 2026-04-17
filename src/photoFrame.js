@@ -1,17 +1,15 @@
 // PhotoFrame — the floating memory frame that reveals at each milestone.
-// The reveal is the emotional centerpiece. Animation steps:
-//
-//   1. Trigger → sparkle burst + soft chime
+// Reveal animation stages (the emotional centerpiece):
+//   1. Sparkle burst + shimmer ring + soft chime
 //   2. Light beam descends from sky to anchor point
-//   3. Frame materializes: scale from 0 with back-ease overshoot,
-//      dual rotation wobble, ribbon flourish
-//   4. "Photo" placeholder does an iris/unfold reveal (grey card),
-//      scanning light sweep across it
-//   5. Year + title fade in beneath
-//   6. Frame settles into eternal gentle bob + slow sway
+//   3. Frame materializes: scale from 0 with back-ease overshoot + tilt
+//   4. Iris reveal of the grey photo placeholder
+//   5. Shine sweep across the frame
+//   6. Ribbon flourishes in + caption/year fade in
+//   7. Frame settles into eternal gentle bob + slow sway
 //
-// Placeholder photos are elegant grey cards with a subtle gradient and
-// a tiny camera icon + "memory" — easy to swap for real images later.
+// Placeholders are elegant grey cards with subtle gradient + camera icon —
+// designed to still look intentional until real photos are dropped in.
 
 class PhotoFrame extends Phaser.GameObjects.Container {
   constructor(scene, x, y, milestone) {
@@ -20,11 +18,11 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     this.milestone = milestone;
     this.setDepth(20);
 
-    this.frameW = 180;
-    this.frameH = 140;
-    this.rotOffset = (Math.sin(milestone.id * 1.7) * 0.06); // gentle variance
+    // doubled in size per request
+    this.frameW = 360;
+    this.frameH = 280;
+    this.rotOffset = (Math.sin(milestone.id * 1.7) * 0.06);
 
-    // container children (built but hidden until reveal)
     this._buildChildren();
     this.container.setScale(0);
     this.container.setAlpha(0);
@@ -42,98 +40,88 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     this.container = s.add.container(0, 0);
     this.add(this.container);
 
-    // glow halo behind frame
+    // glow halo behind frame (doubled radii + step)
     this.glow = s.add.graphics();
     const accent = Phaser.Display.Color.HexStringToColor(this.milestone.accent).color;
-    for (let r = 80; r > 0; r -= 8) {
-      const a = (1 - r / 80) * 0.04;
+    for (let r = 160; r > 0; r -= 12) {
+      const a = (1 - r / 160) * 0.04;
       this.glow.fillStyle(accent, a);
-      this.glow.fillRoundedRect(-w / 2 - r, -h / 2 - r, w + r * 2, h + r * 2, 18);
+      this.glow.fillRoundedRect(-w / 2 - r, -h / 2 - r, w + r * 2, h + r * 2, 28);
     }
     this.container.add(this.glow);
 
-    // frame drop shadow
+    // drop shadow (offset scales with size)
     const shadow = s.add.graphics();
-    shadow.fillStyle(0x000000, 0.25);
-    shadow.fillRoundedRect(-w / 2 + 4, -h / 2 + 6, w, h, 10);
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(-w / 2 + 8, -h / 2 + 12, w, h, 18);
     this.container.add(shadow);
 
-    // outer frame (painterly white)
+    // outer frame — painterly cream / white
     const frame = s.add.graphics();
     frame.fillStyle(0xFAF5E8, 1);
-    frame.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
-    // inner frame bevel
-    frame.lineStyle(1.5, 0xD4B88A, 0.9);
-    frame.strokeRoundedRect(-w / 2 + 6, -h / 2 + 6, w - 12, h - 12, 6);
+    frame.fillRoundedRect(-w / 2, -h / 2, w, h, 18);
+    // inner bevel
+    frame.lineStyle(3, 0xD4B88A, 0.9);
+    frame.strokeRoundedRect(-w / 2 + 12, -h / 2 + 12, w - 24, h - 24, 12);
     // corner flourishes
-    frame.fillStyle(this._lighten(Phaser.Display.Color.HexStringToColor(this.milestone.accent).color, 0.4), 0.85);
-    const corners = [
-      [-w / 2 + 8, -h / 2 + 8],
-      [ w / 2 - 8, -h / 2 + 8],
-      [-w / 2 + 8,  h / 2 - 8],
-      [ w / 2 - 8,  h / 2 - 8],
-    ];
-    corners.forEach(([cx, cy]) => frame.fillCircle(cx, cy, 2.5));
+    const accentLight = this._lighten(accent, 0.4);
+    frame.fillStyle(accentLight, 0.85);
+    const coff = 16;
+    [[ -w / 2 + coff, -h / 2 + coff ], [ w / 2 - coff, -h / 2 + coff ],
+     [ -w / 2 + coff,  h / 2 - coff ], [ w / 2 - coff,  h / 2 - coff ]]
+      .forEach(([cx, cy]) => frame.fillCircle(cx, cy, 5));
     this.container.add(frame);
 
-    // inner photo area (grey placeholder)
-    const pw = w - 22, ph = h - 40;
+    // inner photo area (grey placeholder, scaled 2x)
+    const pw = w - 44, ph = h - 80;
     this.photoArea = s.add.graphics();
-    // base grey
-    for (let i = 0; i < 20; i++) {
-      const t = i / 19;
+    // gradient grey
+    const strips = 30;
+    for (let i = 0; i < strips; i++) {
+      const t = i / (strips - 1);
       const c = lerpColor(0x9AA3AD, 0xC8CED5, t);
       this.photoArea.fillStyle(c, 1);
-      this.photoArea.fillRect(-pw / 2, -ph / 2 - 8 + Math.floor(i * ph / 20), pw, Math.ceil(ph / 20) + 1);
+      this.photoArea.fillRect(-pw / 2, -ph / 2 + Math.floor(i * ph / strips), pw, Math.ceil(ph / strips) + 1);
     }
-    // camera icon
-    this.photoArea.lineStyle(2, 0xffffff, 0.7);
-    this.photoArea.strokeRoundedRect(-18, -18, 36, 24, 3);
+    // camera icon (2x)
+    this.photoArea.lineStyle(4, 0xffffff, 0.7);
+    this.photoArea.strokeRoundedRect(-36, -36, 72, 48, 6);
     this.photoArea.fillStyle(0xffffff, 0.85);
-    this.photoArea.fillCircle(0, -6, 7);
+    this.photoArea.fillCircle(0, -12, 14);
     this.photoArea.fillStyle(0x9AA3AD, 1);
-    this.photoArea.fillCircle(0, -6, 4);
+    this.photoArea.fillCircle(0, -12, 8);
     this.photoArea.fillStyle(0xffffff, 0.9);
-    this.photoArea.fillRect(8, -22, 8, 4);
+    this.photoArea.fillRect(16, -44, 16, 8);
     this.container.add(this.photoArea);
-
-    // mask for iris reveal
-    this.photoMask = s.make.graphics({ x: 0, y: 0, add: false });
-    const maskG = this.photoMask;
-    maskG.fillStyle(0xffffff, 1);
-    maskG.fillRect(-pw / 2 - 4, 8 - 8, pw + 8, 2); // will expand
-    // actually use geometryMask - build a rect we animate
-    // we'll animate this.photoArea directly via scissor via crop — simpler: scale photoArea from 0.
-    // revert: no mask, will animate photoArea scale
 
     // shine sweep overlay
     this.shine = s.add.graphics();
     this.shine.setAlpha(0);
     this.container.add(this.shine);
 
-    // ribbon at top
+    // ribbon flourish at top (2x)
     this.ribbon = s.add.graphics();
-    this.ribbon.fillStyle(Phaser.Display.Color.HexStringToColor(this.milestone.accent).color, 1);
-    this.ribbon.fillTriangle(-22, -h / 2 - 4, 22, -h / 2 - 4, 0, -h / 2 + 10);
+    this.ribbon.fillStyle(accent, 1);
+    this.ribbon.fillTriangle(-44, -h / 2 - 8, 44, -h / 2 - 8, 0, -h / 2 + 20);
     this.ribbon.fillStyle(0xffffff, 0.35);
-    this.ribbon.fillTriangle(-22, -h / 2 - 4, 0, -h / 2 - 4, -11, -h / 2 + 3);
+    this.ribbon.fillTriangle(-44, -h / 2 - 8, 0, -h / 2 - 8, -22, -h / 2 + 6);
     this.ribbon.setAlpha(0);
     this.container.add(this.ribbon);
 
-    // caption + year below the frame
-    this.caption = s.add.text(0, h / 2 + 18, this.milestone.title, {
+    // caption + year below the frame (bigger fonts to match 2x frame)
+    this.caption = s.add.text(0, h / 2 + 28, this.milestone.title, {
       fontFamily: 'Georgia, serif',
-      fontSize: '15px',
+      fontSize: '22px',
       color: '#FAF5E8',
       stroke: '#2a1a0a',
-      strokeThickness: 3,
+      strokeThickness: 4,
       align: 'center',
     }).setOrigin(0.5);
     this.add(this.caption);
 
-    this.year = s.add.text(0, h / 2 + 36, this.milestone.year, {
+    this.year = s.add.text(0, h / 2 + 54, this.milestone.year, {
       fontFamily: 'Georgia, serif',
-      fontSize: '11px',
+      fontSize: '15px',
       color: this.milestone.accent,
       stroke: '#2a1a0a',
       strokeThickness: 2,
@@ -141,7 +129,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     }).setOrigin(0.5);
     this.add(this.year);
 
-    // initial photoArea scale 0 for iris reveal
+    // iris reveal start state
     this.photoArea.setScale(0);
   }
 
@@ -160,42 +148,34 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     const beam = s.add.graphics().setDepth(19);
     const bx = this.x;
     beam.fillStyle(accent, 0.35);
-    beam.fillTriangle(bx - 4, 0, bx + 4, 0, bx + 36, this.y);
-    beam.fillTriangle(bx - 4, 0, bx + 4, 0, bx - 36, this.y);
+    beam.fillTriangle(bx - 4, 0, bx + 4, 0, bx + 48, this.y);
+    beam.fillTriangle(bx - 4, 0, bx + 4, 0, bx - 48, this.y);
     beam.setAlpha(0);
     s.tweens.add({
-      targets: beam,
-      alpha: 0.9,
-      duration: 180,
-      yoyo: true,
-      hold: 120,
+      targets: beam, alpha: 0.9, duration: 200, yoyo: true, hold: 150,
       onComplete: () => beam.destroy(),
     });
 
     // 2. sparkle burst
     const burst = s.add.particles(this.x, this.y, '__DEFAULT', {
-      speed: { min: 80, max: 220 },
-      lifespan: { min: 500, max: 900 },
-      scale: { start: 0.7, end: 0 },
+      speed: { min: 100, max: 280 },
+      lifespan: { min: 600, max: 1100 },
+      scale: { start: 0.9, end: 0 },
       alpha: { start: 1, end: 0 },
       tint: [accent, 0xFFFFFF, this._lighten(accent, 0.5)],
-      quantity: 40,
+      quantity: 50,
       emitting: false,
     }).setDepth(25);
-    burst.explode(40);
-    s.time.delayedCall(1000, () => burst.destroy());
+    burst.explode(50);
+    s.time.delayedCall(1200, () => burst.destroy());
 
-    // small poof ring
+    // shimmer ring
     const ring = s.add.graphics().setDepth(21);
-    ring.lineStyle(3, accent, 1);
-    ring.strokeCircle(this.x, this.y, 6);
+    ring.lineStyle(4, accent, 1);
+    ring.strokeCircle(this.x, this.y, 8);
     s.tweens.add({
-      targets: ring,
-      scale: 12,
-      alpha: 0,
-      duration: 600,
-      ease: 'Cubic.easeOut',
-      onComplete: () => ring.destroy(),
+      targets: ring, scale: 18, alpha: 0, duration: 700,
+      ease: 'Cubic.easeOut', onComplete: () => ring.destroy(),
     });
 
     // 3. frame materializes
@@ -204,18 +184,18 @@ class PhotoFrame extends Phaser.GameObjects.Container {
       scale: { from: 0, to: 1 },
       alpha: { from: 0, to: 1 },
       angle: { from: -15, to: this.rotOffset * 57.3 },
-      duration: 480,
+      duration: 540,
       ease: 'Back.easeOut',
       onStart: () => s.cameras.main.flash(150, 255, 240, 200, false),
     });
 
-    // ribbon flourish slightly delayed
+    // ribbon flourish
     s.tweens.add({
       targets: this.ribbon,
       alpha: { from: 0, to: 1 },
-      y: { from: -10, to: 0 },
-      delay: 280,
-      duration: 260,
+      y: { from: -14, to: 0 },
+      delay: 320,
+      duration: 300,
       ease: 'Back.easeOut',
     });
 
@@ -223,24 +203,22 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     s.tweens.add({
       targets: this.photoArea,
       scale: { from: 0, to: 1 },
-      delay: 380,
-      duration: 420,
+      delay: 420,
+      duration: 460,
       ease: 'Cubic.easeOut',
     });
 
-    // 5. shine sweep across frame
-    s.time.delayedCall(620, () => {
+    // 5. shine sweep
+    s.time.delayedCall(700, () => {
       this.shine.clear();
-      const sw = 36;
+      const sw = 72;
       this.shine.fillStyle(0xffffff, 0.5);
       this.shine.fillRect(-sw, -this.frameH / 2, sw, this.frameH);
       this.shine.setAlpha(1);
       this.shine.x = -this.frameW / 2 - sw;
       s.tweens.add({
-        targets: this.shine,
-        x: this.frameW / 2,
-        duration: 420,
-        ease: 'Sine.easeInOut',
+        targets: this.shine, x: this.frameW / 2,
+        duration: 480, ease: 'Sine.easeInOut',
         onComplete: () => this.shine.setAlpha(0),
       });
     });
@@ -249,103 +227,123 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     s.tweens.add({
       targets: [this.caption, this.year],
       alpha: { from: 0, to: 1 },
-      y: '+=6',
-      delay: 700,
-      duration: 360,
+      y: '+=8',
+      delay: 780,
+      duration: 380,
       ease: 'Sine.easeOut',
     });
 
-    // 7. start bob loop (gentle levitation)
-    s.time.delayedCall(600, () => this._startBob());
+    // 7. settle into bob
+    s.time.delayedCall(700, () => this._startBob());
 
-    // optional per-milestone flairs
+    // milestone-specific flair
     this._playMilestoneFlair();
   }
 
   _playMilestoneFlair() {
-    const s = this.scene;
     const m = this.milestone;
-    if (m.hearts) this._emitHearts();
-    if (m.petals) this._emitPetals();
-    if (m.glow) this._emitGoldenGlow();
-    if (m.keys) this._emitKeys();
+    if (m.cradle)    this._emitCradle();
+    if (m.hearts)    this._emitHearts();
+    if (m.petals)    this._emitPetals();
+    if (m.glow)      this._emitGoldenGlow();
+    if (m.keys)      this._emitKeys();
     if (m.fireworks) this._emitFireworks();
+  }
+
+  _emitCradle() {
+    const s = this.scene;
+    const p = s.add.particles(this.x, this.y, '__DEFAULT', {
+      speed: { min: 30, max: 90 },
+      lifespan: 2000,
+      scale: { start: 0.7, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint: [0xFFB8D9, 0xB8E0FF, 0xFFE6A7, 0xFFFFFF],
+      quantity: 1,
+      frequency: 140,
+      gravityY: -20,
+    }).setDepth(22);
+    s.time.delayedCall(4200, () => p.destroy());
   }
 
   _emitHearts() {
     const s = this.scene;
     const heartTex = this._ensureHeartTexture();
     const p = s.add.particles(this.x, this.y, heartTex, {
-      speed: { min: 20, max: 60 },
+      speed: { min: 25, max: 70 },
       angle: { min: 240, max: 300 },
-      lifespan: 1600,
-      scale: { start: 0.5, end: 0.9 },
+      lifespan: 1800,
+      scale: { start: 0.6, end: 1.1 },
       alpha: { start: 1, end: 0 },
       quantity: 1,
-      frequency: 160,
+      frequency: 150,
     }).setDepth(22);
-    s.time.delayedCall(3500, () => p.destroy());
+    s.time.delayedCall(3800, () => p.destroy());
   }
+
   _emitPetals() {
     const s = this.scene;
     const tex = this._ensurePetalTexture();
-    const p = s.add.particles(this.x, this.y - 80, tex, {
-      speedX: { min: -20, max: 20 },
-      speedY: { min: 20, max: 60 },
-      lifespan: 2400,
-      scale: 0.9,
+    const p = s.add.particles(this.x, this.y - 140, tex, {
+      speedX: { min: -25, max: 25 },
+      speedY: { min: 25, max: 70 },
+      lifespan: 2600,
+      scale: 1.1,
       rotate: { start: 0, end: 360 },
       alpha: { start: 1, end: 0 },
       quantity: 1,
-      frequency: 90,
+      frequency: 80,
     }).setDepth(22);
-    s.time.delayedCall(4000, () => p.destroy());
+    s.time.delayedCall(4200, () => p.destroy());
   }
+
   _emitGoldenGlow() {
     const s = this.scene;
-    const burst = s.add.particles(this.x, this.y, '__DEFAULT', {
-      speed: { min: 10, max: 40 },
-      lifespan: 2200,
-      scale: { start: 0.5, end: 0 },
+    const p = s.add.particles(this.x, this.y, '__DEFAULT', {
+      speed: { min: 15, max: 45 },
+      lifespan: 2400,
+      scale: { start: 0.6, end: 0 },
       alpha: { start: 0.9, end: 0 },
       tint: [0xFFE6A7, 0xFFF1C9],
       quantity: 1,
       frequency: 120,
     }).setDepth(22);
-    s.time.delayedCall(4500, () => burst.destroy());
+    s.time.delayedCall(4800, () => p.destroy());
   }
+
   _emitKeys() {
     const s = this.scene;
     const tex = this._ensureKeyTexture();
     for (let i = 0; i < 3; i++) {
       s.time.delayedCall(200 * i, () => {
-        const k = s.add.image(this.x + (i - 1) * 10, this.y, tex).setDepth(22);
+        const k = s.add.image(this.x + (i - 1) * 14, this.y, tex).setDepth(22).setScale(1.6);
         s.tweens.add({
-          targets: k, y: this.y - 60, alpha: 0, angle: 180,
-          duration: 1400, ease: 'Sine.easeOut', onComplete: () => k.destroy(),
+          targets: k, y: this.y - 90, alpha: 0, angle: 180,
+          duration: 1500, ease: 'Sine.easeOut', onComplete: () => k.destroy(),
         });
       });
     }
   }
+
   _emitFireworks() {
     const s = this.scene;
-    for (let i = 0; i < 6; i++) {
-      s.time.delayedCall(i * 400, () => {
-        const fx = this.x + (Math.random() - 0.5) * 300;
-        const fy = this.y - 80 - Math.random() * 120;
-        const colors = [0xFFD86B, 0xFF6B9D, 0x7DD3FC, 0xC4B5FD, 0xFF9EBB];
+    for (let i = 0; i < 8; i++) {
+      s.time.delayedCall(i * 350, () => {
+        const fx = this.x + (Math.random() - 0.5) * 440;
+        const fy = this.y - 100 - Math.random() * 160;
+        const colors = [0xFFD86B, 0xFF6B9D, 0x7DD3FC, 0xC4B5FD, 0xFF9EBB, 0x86EFAC];
         const tint = colors[i % colors.length];
         const p = s.add.particles(fx, fy, '__DEFAULT', {
-          speed: { min: 120, max: 200 },
-          lifespan: 900,
-          scale: { start: 0.7, end: 0 },
+          speed: { min: 130, max: 220 },
+          lifespan: 1000,
+          scale: { start: 0.8, end: 0 },
           alpha: { start: 1, end: 0 },
           tint: [tint, 0xFFFFFF],
-          quantity: 24,
+          quantity: 28,
           emitting: false,
+          gravityY: 80,
         }).setDepth(25);
-        p.explode(30);
-        s.time.delayedCall(1200, () => p.destroy());
+        p.explode(32);
+        s.time.delayedCall(1400, () => p.destroy());
       });
     }
   }
@@ -359,6 +357,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     g.generateTexture(key, 18, 18); g.destroy();
     return key;
   }
+
   _ensurePetalTexture() {
     const key = 'tex_petal';
     if (this.scene.textures.exists(key)) return key;
@@ -370,6 +369,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     g.generateTexture(key, 12, 16); g.destroy();
     return key;
   }
+
   _ensureKeyTexture() {
     const key = 'tex_key';
     if (this.scene.textures.exists(key)) return key;
@@ -386,8 +386,8 @@ class PhotoFrame extends Phaser.GameObjects.Container {
   _startBob() {
     this.scene.tweens.add({
       targets: this.container,
-      y: { from: 0, to: -6 },
-      duration: 2200,
+      y: { from: 0, to: -10 },
+      duration: 2400,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
@@ -395,7 +395,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     this.scene.tweens.add({
       targets: this.container,
       angle: `+=${2 + this.milestone.id * 0.1}`,
-      duration: 3500,
+      duration: 3800,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
