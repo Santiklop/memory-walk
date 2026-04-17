@@ -170,7 +170,6 @@ class MainScene extends Phaser.Scene {
   // --- Finale ---
   _onFinale() {
     const { viewW, viewH } = WORLD;
-    const cam = this.cameras.main;
 
     // dim overlay behind the banner so text pops
     const dim = this.add.graphics().setScrollFactor(0).setDepth(1000);
@@ -252,11 +251,6 @@ class MainScene extends Phaser.Scene {
       });
       this.tweens.add({
         targets: flourish,  y: -20, alpha: 0, duration: 1000,
-      });
-
-      // camera pan back
-      this.tweens.add({
-        targets: cam, scrollX: 0, duration: 14000, ease: 'Sine.easeInOut', delay: 400,
       });
 
       const hint = this.add.text(viewW / 2, viewH - 44,
