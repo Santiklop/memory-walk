@@ -243,9 +243,12 @@ class PhotoFrame extends Phaser.GameObjects.Container {
   _playMilestoneFlair() {
     const m = this.milestone;
     if (m.cradle)    this._emitCradle();
+    if (m.airplane)  this._emitPaperAirplanes();
     if (m.hearts)    this._emitHearts();
     if (m.petals)    this._emitPetals();
     if (m.glow)      this._emitGoldenGlow();
+    if (m.waffles)   this._emitWaffles();
+    if (m.bus)       this._emitRedBus();
     if (m.keys)      this._emitKeys();
     if (m.fireworks) this._emitFireworks();
   }
@@ -346,6 +349,160 @@ class PhotoFrame extends Phaser.GameObjects.Container {
         s.time.delayedCall(1400, () => p.destroy());
       });
     }
+  }
+
+  _emitPaperAirplanes() {
+    // three paper airplanes fly out of the frame, curving upward.
+    const s = this.scene;
+    const tex = this._ensurePaperAirplaneTexture();
+    for (let i = 0; i < 3; i++) {
+      s.time.delayedCall(i * 320, () => {
+        const dir = i - 1;                          // -1, 0, +1 -> left, center, right spread
+        const plane = s.add.image(this.x, this.y, tex)
+          .setDepth(22).setScale(1.2).setAngle(-10 + dir * 20);
+        const targetX = this.x + dir * 220 + (40 - Math.random() * 20);
+        const targetY = this.y - 160 - Math.random() * 80;
+        s.tweens.add({
+          targets: plane,
+          x: targetX,
+          y: targetY,
+          angle: -40 + dir * 25,
+          alpha: 0,
+          duration: 2400,
+          ease: 'Sine.easeOut',
+          onComplete: () => plane.destroy(),
+        });
+        // gentle waver as it flies
+        s.tweens.add({
+          targets: plane,
+          angle: `+=${6 + dir * 4}`,
+          duration: 400,
+          yoyo: true, repeat: 2,
+          ease: 'Sine.easeInOut',
+        });
+      });
+    }
+  }
+
+  _emitWaffles() {
+    // warm Belgian waffles floating upward with a lazy rotation.
+    const s = this.scene;
+    const tex = this._ensureWaffleTexture();
+    const p = s.add.particles(this.x, this.y + 40, tex, {
+      speedX: { min: -25, max: 25 },
+      speedY: { min: -70, max: -40 },
+      lifespan: 2800,
+      scale: { start: 0.8, end: 1.1 },
+      alpha: { start: 1, end: 0 },
+      rotate: { min: -180, max: 180 },
+      quantity: 1,
+      frequency: 240,
+    }).setDepth(22);
+    s.time.delayedCall(4200, () => p.destroy());
+  }
+
+  _emitRedBus() {
+    // a London double-decker sails past in the middle distance.
+    const s = this.scene;
+    const tex = this._ensureBusTexture();
+    const groundY = WORLD.groundY;
+    const startX = this.x - 560;
+    const bus = s.add.image(startX, groundY - 28, tex)
+      .setDepth(7).setScale(0.85).setAlpha(0.95);
+    s.tweens.add({
+      targets: bus,
+      x: this.x + 560,
+      duration: 5200,
+      ease: 'Sine.inOut',
+      onComplete: () => bus.destroy(),
+    });
+    // tiny bounce as it rolls over cobbles
+    s.tweens.add({
+      targets: bus,
+      y: groundY - 30,
+      duration: 180,
+      yoyo: true, repeat: 13,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  _ensurePaperAirplaneTexture() {
+    const key = 'tex_airplane';
+    if (this.scene.textures.exists(key)) return key;
+    const g = this.scene.add.graphics({ x: 0, y: 0, add: false });
+    g.fillStyle(0xFFFFFF, 1);
+    g.fillTriangle(0, 10, 26, 2, 26, 18);
+    g.fillStyle(0xE0E4EA, 1);
+    g.fillTriangle(0, 10, 22, 10, 26, 18);
+    g.lineStyle(1, 0xA8AEB8, 1);
+    g.lineBetween(0, 10, 26, 10);
+    g.generateTexture(key, 26, 20);
+    g.destroy();
+    return key;
+  }
+
+  _ensureWaffleTexture() {
+    const key = 'tex_waffle';
+    if (this.scene.textures.exists(key)) return key;
+    const g = this.scene.add.graphics({ x: 0, y: 0, add: false });
+    g.fillStyle(0xC28049, 1);
+    g.fillRoundedRect(0, 0, 24, 22, 4);
+    g.fillStyle(0xD89960, 1);
+    g.fillRoundedRect(2, 2, 20, 18, 3);
+    g.fillStyle(0x8B5A2B, 1);
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        g.fillRect(4 + c * 6, 4 + r * 5, 3, 3);
+      }
+    }
+    // tiny syrup sheen
+    g.fillStyle(0xFFF1A8, 0.4);
+    g.fillEllipse(10, 5, 10, 3);
+    g.generateTexture(key, 24, 22);
+    g.destroy();
+    return key;
+  }
+
+  _ensureBusTexture() {
+    const key = 'tex_bus';
+    if (this.scene.textures.exists(key)) return key;
+    const w = 104, h = 56;
+    const g = this.scene.add.graphics({ x: 0, y: 0, add: false });
+    // body
+    g.fillStyle(0xC83327, 1);
+    g.fillRoundedRect(0, 6, w, h - 16, 4);
+    // upper deck windows
+    g.fillStyle(0xFFEEC8, 0.95);
+    g.fillRect(6, 10, w - 12, 12);
+    // lower deck windows
+    g.fillRect(6, 28, w - 28, 12);
+    // door
+    g.fillStyle(0x6A1A12, 1);
+    g.fillRect(w - 20, 28, 12, 14);
+    // window dividers + panel gap
+    g.fillStyle(0xC83327, 1);
+    for (let i = 1; i < 6; i++) {
+      g.fillRect(6 + i * ((w - 12) / 6) - 1, 10, 2, 12);
+    }
+    for (let i = 1; i < 5; i++) {
+      g.fillRect(6 + i * ((w - 28) / 5) - 1, 28, 2, 12);
+    }
+    // highlight strip between decks
+    g.fillStyle(0xE85547, 1);
+    g.fillRect(2, 24, w - 4, 2);
+    // headlight
+    g.fillStyle(0xFFE8A8, 1);
+    g.fillCircle(w - 4, 22, 2);
+    // wheels
+    g.fillStyle(0x1a1a1a, 1);
+    g.fillCircle(18, h - 8, 7);
+    g.fillCircle(w - 22, h - 8, 7);
+    g.fillStyle(0x606060, 1);
+    g.fillCircle(18, h - 8, 3);
+    g.fillCircle(w - 22, h - 8, 3);
+    g.generateTexture(key, w, h);
+    g.destroy();
+    return key;
   }
 
   _ensureHeartTexture() {

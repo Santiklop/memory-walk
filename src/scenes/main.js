@@ -26,8 +26,10 @@ class MainScene extends Phaser.Scene {
     this.obs = new Obstacles(this, groundY);
     this.obs.build();
 
-    // character
+    // character — depth 15 keeps her in front of the passing bus (depth 7)
+    // and obstacles (depth 9-10), but behind photo frames (depth 20).
     this.katya = new Katya(this, 200, groundY - 10);
+    this.katya.setDepth(15);
     this.physics.add.collider(this.katya, this.ground);
     this.physics.add.collider(this.katya, this.obs.group);
 
@@ -49,8 +51,8 @@ class MainScene extends Phaser.Scene {
       this.physics.add.overlap(this.katya, zone, () => {
         if (!frame.revealed) {
           frame.reveal();
-          if (m.growth) {
-            this.time.delayedCall(300, () => this.katya.grow());
+          if (m.growTo) {
+            this.time.delayedCall(300, () => this.katya.grow(m.growTo));
           }
           this._chime(m.accent);
           this.cameras.main.shake(120, 0.003);
