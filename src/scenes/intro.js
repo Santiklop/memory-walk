@@ -2,11 +2,10 @@ class IntroScene extends Phaser.Scene {
   constructor() { super('Intro'); }
 
   preload() {
-    // Background music — load asynchronously. Space in the filename is
-    // percent-encoded for the URL. Play starts on the user's tap in _begin()
-    // (browsers require a user gesture before audio).
-    this.load.audio('bgm', 'assets/music/Background%20song.mp3');
-
+    // Background music via a plain HTML5 <Audio> — bypasses Phaser's audio
+    // pipeline entirely, which means no weird scene-shutdown interactions
+    // and no AudioContext lock fights. The element lives on `window` so it
+    // persists across every scene transition.
     const { viewW, viewH } = WORLD;
     const loading = this.add.text(viewW / 2, viewH - 36, 'loading…', {
       fontFamily: 'Georgia, serif',
@@ -15,11 +14,18 @@ class IntroScene extends Phaser.Scene {
       fontStyle: 'italic',
     }).setOrigin(0.5).setAlpha(0.6);
 
-    this.load.on('progress', (v) => {
-      loading.setText(`loading ${Math.round(v * 100)}%`);
-    });
-    this.load.once('complete', () => loading.destroy());
-    this.load.once('loaderror', () => loading.destroy());
+    if (!window.__bgmAudio) {
+      const audio = new Audio();
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.volume = 0;
+      window.__bgmAudio = audio;
+      audio.addEventListener('canplaythrough', () => loading.destroy(), { once: true });
+      audio.addEventListener('error', () => loading.destroy(), { once: true });
+      audio.src = 'assets/music/Background%20song.mp3';
+    } else {
+      loading.destroy();
+    }
   }
 
   create() {
@@ -148,25 +154,27 @@ class IntroScene extends Phaser.Scene {
     if (this._starting) return;
     this._starting = true;
 
-    // start background music — this call is inside a user gesture (tap / SPACE)
-    // so the AudioContext is allowed to start. The sound is attached to the
-    // global sound manager and persists across scene transitions.
-    if (this.cache.audio.has('bgm') && !this.sound.get('bgm')) {
-      const bgm = this.sound.add('bgm', { loop: true, volume: 0.05 });
-      bgm.play();
-      // fade up via a game-level event (not scene tweens — scene transitions
-      // out of Intro before a scene tween could finish, so it would freeze
-      // at near-zero volume).
-      const startAt = this.game.loop.now;
-      const rampMs = 2200;
+    // Start background music. Called inside the user's tap/SPACE handler,
+    // which satisfies the browser's autoplay gate.
+    const audio = window.__bgmAudio;
+    if (audio && audio.paused) {
+      audio.volume = 0.4;
+      const playPromise = audio.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch((err) => console.warn('bgm play failed:', err));
+      }
+      // fade in from 0 to 0.4 over ~2.2s using setInterval (scene-independent)
+      audio.volume = 0.05;
+      let v = 0.05;
       const target = 0.4;
-      const step = () => {
-        const t = Math.min(1, (this.game.loop.now - startAt) / rampMs);
-        bgm.setVolume(0.05 + (target - 0.05) * t);
-        if (t < 1) return;
-        this.game.events.off('step', step);
-      };
-      this.game.events.on('step', step);
+      const id = setInterval(() => {
+        v += 0.015;
+        if (v >= target) {
+          v = target;
+          clearInterval(id);
+        }
+        audio.volume = v;
+      }, 60);
     }
 
     this.cameras.main.fadeOut(600, 255, 240, 200);
