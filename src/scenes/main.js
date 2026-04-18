@@ -51,9 +51,6 @@ class MainScene extends Phaser.Scene {
       this.physics.add.overlap(this.katya, zone, () => {
         if (!frame.revealed) {
           frame.reveal();
-          if (m.growTo) {
-            this.time.delayedCall(300, () => this.katya.grow(m.growTo));
-          }
           this._chime(m.accent);
           this.cameras.main.shake(120, 0.003);
         }
@@ -128,6 +125,13 @@ class MainScene extends Phaser.Scene {
   update(time, delta) {
     this.katya.update(delta, this.keysCombined);
 
+    // Form sync based on her current x — so walking back reverts her outfit
+    // through the same transitions in reverse.
+    const targetForm = this._computeFormAt(this.katya.x);
+    if (targetForm && this.katya.state !== targetForm && !this.katya._growing) {
+      this.katya.grow(targetForm);
+    }
+
     const p = Phaser.Math.Clamp(this.katya.x / WORLD.width, 0, 1);
     this.hudFill.clear();
     this.hudFill.fillStyle(0xFFD86B, 0.85);
@@ -146,6 +150,19 @@ class MainScene extends Phaser.Scene {
       this.finaleTriggered = true;
       this._onFinale();
     }
+  }
+
+  // Returns the character form that should apply at a given world x.
+  // Walks through milestones in order, keeping the latest growTo whose x
+  // we've already reached. Naturally supports walk-back (fewer milestones
+  // applied as x shrinks, so form steps back through the history).
+  _computeFormAt(x) {
+    let form = 'baby';
+    for (let i = 0; i < MILESTONES.length; i++) {
+      const m = MILESTONES[i];
+      if (m.x <= x && m.growTo) form = m.growTo;
+    }
+    return form;
   }
 
   _chime() {
