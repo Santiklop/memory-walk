@@ -1,101 +1,152 @@
-// Locale palettes — each stretch of the journey now maps to a real place.
-// The colors drive the procedural scenery in background.js.
+// Biome palettes. Each locale carries a distinct time-of-day + atmosphere
+// so the journey visually reads as "different places" rather than one
+// re-tinted world. Extra fields (silhouetteFar/Mid, atmospheric, buildingAlt*,
+// particle) drive aerial perspective and the ambient particle system.
 
 const BIOMES = [
-  { // 0 - Siberia childhood
+  { // 0 - Siberia: crisp morning, snow everywhere
     name: 'siberia',
-    skyTop:       0xD6E7F7,
-    skyBottom:    0xF7FBFF,
-    sunColor:     0xFFF4C4,
-    sunY:         96,
-    far:          0xA6BCD0,
-    mid:          0x7B95AF,
-    near:         0xD8E3ED,
-    grass:        0xECF3FA,
-    grassDark:    0xC8D7E6,
-    tree:         0x2C4258,
-    cloud:        0xF9FDFF,
-    water:        0xA9C8DF,
-    building:     0xCAB9A6,
-    buildingDark: 0x7D6A58,
-    roofAccent:   0x8FA9BF,
-    flower:       0xFFFFFF,
+    skyTop:        0xC8D6E4,  // pale cold blue
+    skyBottom:     0xFFE5D0,  // warm low horizon
+    sunColor:      0xFFECB8,
+    sunY:          108,
+    atmospheric:   0xE0ECF5,
+    silhouetteFar: 0xA8BCCE,  // distant snowy mountains
+    silhouetteMid: 0x7C8FA2,
+    far:           0xA8BCCE,
+    mid:           0x7C8FA2,
+    near:          0xDCE6F0,
+    grass:         0xEAF0F5,
+    grassDark:     0xC8D5E0,
+    tree:          0x2C4A3A,
+    cloud:         0xFCFDFE,
+    water:         0xA9C8DF,
+    building:      0x5D3E2A,
+    buildingDark:  0x3D2818,
+    buildingTrim:  0xC4A078,
+    roofAccent:    0xFFFFFF,  // snow-covered roofs
+    domeGold:      0xD4A660,
+    flower:        0xFFFFFF,
+    particle:      0xFFFFFF,  // snowflakes
+    particleType:  'snow',
   },
-  { // 1 - St Petersburg university / early family years
+  { // 1 - St Petersburg: golden hour, imperial
     name: 'st_petersburg',
-    skyTop:       0xDDE5F2,
-    skyBottom:    0xF6D9C9,
-    sunColor:     0xFFE7B7,
-    sunY:         122,
-    far:          0xB9A5C0,
-    mid:          0x8E7B93,
-    near:         0x90AB88,
-    grass:        0x81A06F,
-    grassDark:    0x627C55,
-    tree:         0x4F5E4E,
-    cloud:        0xFFF6EF,
-    water:        0x7FA6C3,
-    building:     0xE8D5BF,
-    buildingDark: 0x8A7282,
-    roofAccent:   0xB74D5D,
-    flower:       0xF7E4A8,
+    skyTop:        0xCE9DB4,  // warm lavender
+    skyBottom:     0xFFCFA8,  // peach gold
+    sunColor:      0xFFE8B8,
+    sunY:          124,
+    atmospheric:   0xFFE0C0,
+    silhouetteFar: 0x9F7F97,
+    silhouetteMid: 0x6F5B6A,
+    far:           0x9F7F97,
+    mid:           0x6F5B6A,
+    near:          0x88A070,
+    grass:         0x7D9868,
+    grassDark:     0x5C7250,
+    tree:          0x4C6244,
+    cloud:         0xFFE2CD,
+    water:         0x6B8DA8,
+    building:      0xECCAB3,  // Winter Palace pink
+    buildingDark:  0x8C6D5F,
+    buildingAlt1:  0xE8DCB8,  // pale yellow baroque
+    buildingAlt2:  0xC9C6E2,  // pale blue
+    buildingAlt3:  0xDDBBA0,  // warm sand
+    buildingTrim:  0xF8EED8,
+    roofAccent:    0x7B5D4C,
+    domeGold:      0xE5C26E,
+    flower:        0xF3D880,
+    particle:      0xD4A560,  // drifting amber leaves
+    particleType:  'leaves',
   },
-  { // 2 - Belgium
+  { // 2 - Belgium: overcast noon, medieval town
     name: 'belgium',
-    skyTop:       0xCFE4C3,
-    skyBottom:    0xF6F0CF,
-    sunColor:     0xFFE7A2,
-    sunY:         114,
-    far:          0x8AA36E,
-    mid:          0x5F7F4E,
-    near:         0x5A8B49,
-    grass:        0x4A8E43,
-    grassDark:    0x376734,
-    tree:         0x2F5A2D,
-    cloud:        0xF8FBF3,
-    water:        0x74A9A8,
-    building:     0xC3B18A,
-    buildingDark: 0x62543F,
-    roofAccent:   0x8D5234,
-    flower:       0xFFF4B1,
+    skyTop:        0xCED4DA,
+    skyBottom:     0xECE5D3,
+    sunColor:      0xF5F1E8,
+    sunY:          140,
+    atmospheric:   0xDCE2DC,
+    silhouetteFar: 0x7A8C75,
+    silhouetteMid: 0x566A54,
+    far:           0x7A8C75,
+    mid:           0x5E6F58,
+    near:          0x5A8B49,
+    grass:         0x4A8E43,
+    grassDark:     0x376734,
+    tree:          0x2F5A2D,
+    cloud:         0xE8E8E2,
+    water:         0x6F9898,
+    building:      0x8F4A36,  // warm brick red
+    buildingDark:  0x5A2E1E,
+    buildingAlt1:  0xA0603E,  // lighter brick
+    buildingAlt2:  0x6E3825,  // darker brick
+    buildingAlt3:  0xC08A5A,  // tan stone
+    buildingTrim:  0xEADBB8,  // cream stone
+    roofAccent:    0x3D4A52,  // dark slate
+    domeGold:      0xBF8D3E,
+    flower:        0xF4D770,
+    particle:      0xE8E8E8,  // gentle mist
+    particleType:  'mist',
   },
-  { // 3 - London
+  { // 3 - London: grey afternoon, drizzle
     name: 'london',
-    skyTop:       0x9CADC2,
-    skyBottom:    0xD9E2EA,
-    sunColor:     0xE8EDF2,
-    sunY:         138,
-    far:          0x6C7E92,
-    mid:          0x495A6A,
-    near:         0x58704D,
-    grass:        0x4A6F43,
-    grassDark:    0x36513A,
-    tree:         0x344B39,
-    cloud:        0xE8EDF2,
-    water:        0x6E879C,
-    building:     0x6A7684,
-    buildingDark: 0x32404C,
-    roofAccent:   0xB24E43,
-    flower:       0xE7C989,
+    skyTop:        0x7F8C9A,
+    skyBottom:     0xB5BEC8,
+    sunColor:      0xBCC2CC,  // pale, barely breaks through clouds
+    sunY:          150,
+    atmospheric:   0xB0BBC5,
+    silhouetteFar: 0x4E5C6A,  // modern skyline
+    silhouetteMid: 0x3D4854,
+    far:           0x4E5C6A,
+    mid:           0x3D4854,
+    near:          0x4E6A45,
+    grass:         0x496A42,
+    grassDark:     0x364F38,
+    tree:          0x304534,
+    cloud:         0xC5CAD4,
+    water:         0x5A6D80,
+    building:      0x7C3F30,  // red brick
+    buildingDark:  0x2C1E18,
+    buildingAlt1:  0x5A3E34,  // weathered brick
+    buildingAlt2:  0x8D4A3A,
+    buildingTrim:  0xC5B89A,
+    roofAccent:    0x252A32,
+    glassBuilding: 0x566470,  // glass tower
+    redBus:        0xC83327,  // signature red accent
+    domeGold:      0xB88D4A,
+    flower:        0xD8B078,
+    particle:      0xC5D0DC,  // rain streaks
+    particleType:  'rain',
   },
-  { // 4 - Amsterdam and the finale stretch
+  { // 4 - Amsterdam: bright midday, canals + tulips
     name: 'amsterdam',
-    skyTop:       0xA8D5F2,
-    skyBottom:    0xF4F9FD,
-    sunColor:     0xFFE59D,
-    sunY:         116,
-    far:          0x8AAFC4,
-    mid:          0x915C44,
-    near:         0x5D9D58,
-    grass:        0x4D944C,
-    grassDark:    0x3A6F3D,
-    tree:         0x3D6B33,
-    cloud:        0xFFFFFF,
-    water:        0x5DA0C8,
-    building:     0xB86E4E,
-    buildingDark: 0x5F3326,
-    roofAccent:   0xE89A57,
-    flower:       0xFF6B73,
+    skyTop:        0x92C4DE,
+    skyBottom:     0xE8F4FB,
+    sunColor:      0xFFF1A8,
+    sunY:          118,
+    atmospheric:   0xC8DCE8,
+    silhouetteFar: 0x9BB2BF,
+    silhouetteMid: 0x7D94A2,
+    far:           0x9BB2BF,
+    mid:           0x7D94A2,
+    near:          0x5D9D58,
+    grass:         0x4D944C,
+    grassDark:     0x3A6F3D,
+    tree:          0x3D6B33,
+    cloud:         0xFBFDFF,
+    water:         0x4E9FC0,  // bright canal
+    building:      0xB06E4A,  // terracotta
+    buildingDark:  0x5A3422,
+    buildingAlt1:  0x8F4A30,
+    buildingAlt2:  0xCB8568,
+    buildingAlt3:  0xDC9A6B,
+    buildingAlt4:  0x7A3E28,
+    buildingTrim:  0xF5E8D0,
+    roofAccent:    0x5A3422,
+    domeGold:      0xCFA150,
+    flower:        0xE6383C,  // tulip red
+    particle:      0xFF8A3D,  // drifting tulip petals
+    particleType:  'petals',
   },
 ];
 

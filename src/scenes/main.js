@@ -71,6 +71,130 @@ class MainScene extends Phaser.Scene {
     this.cameras.main.fadeIn(600, 255, 240, 200);
 
     this.finaleTriggered = false;
+
+    // atmospheric particles per biome (snow / leaves / mist / rain / petals)
+    this._setupBiomeParticles();
+    this._lastParticleBiome = null;
+  }
+
+  _setupBiomeParticles() {
+    const { viewW } = WORLD;
+
+    // textures for each particle type
+    const mkTex = (key, drawer, w, h) => {
+      if (this.textures.exists(key)) return key;
+      const g = this.add.graphics({ x: 0, y: 0, add: false });
+      drawer(g);
+      g.generateTexture(key, w, h);
+      g.destroy();
+      return key;
+    };
+
+    const snowTex = mkTex('tex_snow', (g) => {
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(3, 3, 3);
+      g.fillStyle(0xffffff, 0.5);
+      g.fillCircle(3, 3, 5);
+    }, 6, 6);
+    const rainTex = mkTex('tex_rain', (g) => {
+      g.fillStyle(0xC5D0DC, 0.9);
+      g.fillRect(0, 0, 1, 10);
+    }, 1, 10);
+    const leafTex = mkTex('tex_ambleaf', (g) => {
+      g.fillStyle(0xD4A560, 1);
+      g.fillTriangle(0, 3, 4, 0, 8, 3);
+      g.fillTriangle(0, 3, 4, 6, 8, 3);
+      g.fillStyle(0x9B6A2A, 0.8);
+      g.fillRect(3.5, 3, 1, 3);
+    }, 8, 8);
+    const mistTex = mkTex('tex_mist', (g) => {
+      g.fillStyle(0xE8E8E8, 0.5);
+      g.fillEllipse(20, 8, 36, 12);
+    }, 40, 16);
+    const petalTex = mkTex('tex_atulip', (g) => {
+      g.fillStyle(0xFF8A3D, 1);
+      g.fillEllipse(4, 5, 6, 10);
+      g.fillStyle(0xE63946, 0.6);
+      g.fillEllipse(3, 3, 3, 5);
+    }, 8, 10);
+
+    // emitter configs — all scrollFactor 0 so particles fill the visible screen
+    this.biomeEmitters = {
+      siberia: this.add.particles(0, -10, snowTex, {
+        x: { min: -30, max: viewW + 30 },
+        y: { min: -20, max: -10 },
+        speedY: { min: 25, max: 55 },
+        speedX: { min: -15, max: 15 },
+        lifespan: { min: 9000, max: 14000 },
+        scale: { min: 0.6, max: 1.2 },
+        alpha: { start: 0.9, end: 0.9 },
+        frequency: 90,
+        emitting: false,
+      }).setScrollFactor(0).setDepth(900),
+
+      st_petersburg: this.add.particles(0, -10, leafTex, {
+        x: { min: -30, max: viewW + 30 },
+        y: { min: -20, max: -10 },
+        speedY: { min: 30, max: 55 },
+        speedX: { min: -35, max: 35 },
+        lifespan: { min: 9000, max: 13000 },
+        scale: { min: 0.8, max: 1.4 },
+        rotate: { min: 0, max: 360 },
+        alpha: { start: 0.95, end: 0.95 },
+        frequency: 260,
+        emitting: false,
+      }).setScrollFactor(0).setDepth(900),
+
+      belgium: this.add.particles(0, 0, mistTex, {
+        x: { min: -40, max: viewW + 40 },
+        y: { min: 260, max: 520 },
+        speedX: { min: 18, max: 34 },
+        speedY: { min: -2, max: 4 },
+        lifespan: { min: 10000, max: 15000 },
+        scale: { min: 1, max: 1.8 },
+        alpha: { start: 0, end: 0 },
+        // fade in then out via lifecycle
+        alphaCustomEase: (t) => Math.sin(t * Math.PI) * 0.42,
+        frequency: 500,
+        emitting: false,
+      }).setScrollFactor(0).setDepth(900),
+
+      london: this.add.particles(0, -10, rainTex, {
+        x: { min: -40, max: viewW + 60 },
+        y: { min: -20, max: -10 },
+        speedY: { min: 520, max: 700 },
+        speedX: { min: -80, max: -60 }, // slight slant
+        lifespan: { min: 1400, max: 1700 },
+        scale: { start: 1, end: 0.9 },
+        alpha: 0.7,
+        frequency: 20,
+        emitting: false,
+      }).setScrollFactor(0).setDepth(900),
+
+      amsterdam: this.add.particles(0, -10, petalTex, {
+        x: { min: -30, max: viewW + 30 },
+        y: { min: -20, max: -10 },
+        speedY: { min: 30, max: 55 },
+        speedX: { min: -25, max: 25 },
+        lifespan: { min: 9000, max: 13000 },
+        scale: { min: 0.8, max: 1.4 },
+        rotate: { min: 0, max: 360 },
+        alpha: 0.95,
+        frequency: 420,
+        emitting: false,
+      }).setScrollFactor(0).setDepth(900),
+    };
+  }
+
+  _updateBiomeParticles() {
+    const biome = this.bg._biomeAt(this.katya.x);
+    if (!biome || biome.name === this._lastParticleBiome) return;
+    if (this._lastParticleBiome && this.biomeEmitters[this._lastParticleBiome]) {
+      this.biomeEmitters[this._lastParticleBiome].stop();
+    }
+    const next = this.biomeEmitters[biome.name];
+    if (next) next.start();
+    this._lastParticleBiome = biome.name;
   }
 
   _buildHUD() {
@@ -121,6 +245,9 @@ class MainScene extends Phaser.Scene {
     if (targetForm && this.katya.state !== targetForm && !this.katya._growing) {
       this.katya.grow(targetForm);
     }
+
+    // Swap atmospheric particles when Katya crosses into a new biome.
+    this._updateBiomeParticles();
 
     // Photo reveals based on x-position — vertical position doesn't matter,
     // so jumps over milestones no longer skip them.
