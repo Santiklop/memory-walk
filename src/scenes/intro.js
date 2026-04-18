@@ -1,6 +1,27 @@
 class IntroScene extends Phaser.Scene {
   constructor() { super('Intro'); }
 
+  preload() {
+    // Background music — load asynchronously. Space in the filename is
+    // percent-encoded for the URL. Play starts on the user's tap in _begin()
+    // (browsers require a user gesture before audio).
+    this.load.audio('bgm', 'assets/music/Background%20song.mp3');
+
+    const { viewW, viewH } = WORLD;
+    const loading = this.add.text(viewW / 2, viewH - 36, 'loading…', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '13px',
+      color: '#FAF5E8',
+      fontStyle: 'italic',
+    }).setOrigin(0.5).setAlpha(0.6);
+
+    this.load.on('progress', (v) => {
+      loading.setText(`loading ${Math.round(v * 100)}%`);
+    });
+    this.load.once('complete', () => loading.destroy());
+    this.load.once('loaderror', () => loading.destroy());
+  }
+
   create() {
     const { viewW, viewH } = WORLD;
 
@@ -126,6 +147,22 @@ class IntroScene extends Phaser.Scene {
   _begin() {
     if (this._starting) return;
     this._starting = true;
+
+    // start background music — this call is inside a user gesture (tap / SPACE)
+    // so the AudioContext is allowed to start. The sound is attached to the
+    // global sound manager and persists across scene transitions.
+    if (this.cache.audio.has('bgm') && !this.sound.get('bgm')) {
+      const bgm = this.sound.add('bgm', { loop: true, volume: 0 });
+      bgm.play();
+      // gentle fade-in so it doesn't punch in at full volume
+      this.tweens.add({
+        targets: bgm,
+        volume: 0.4,
+        duration: 2200,
+        ease: 'Sine.easeIn',
+      });
+    }
+
     this.cameras.main.fadeOut(600, 255, 240, 200);
     this.time.delayedCall(650, () => this.scene.start('Main'));
   }
