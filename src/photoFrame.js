@@ -108,7 +108,9 @@ class PhotoFrame extends Phaser.GameObjects.Container {
     this.ribbon.setAlpha(0);
     this.container.add(this.ribbon);
 
-    // caption + year below the frame (bigger fonts to match 2x frame)
+    // caption + year below the frame. setResolution(2) renders the text
+    // texture at 2x so it stays crisp regardless of how Phaser's Scale.FIT
+    // upscales the canvas to the actual display size.
     this.caption = s.add.text(0, h / 2 + 28, this.milestone.title, {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
@@ -116,7 +118,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
       stroke: '#2a1a0a',
       strokeThickness: 4,
       align: 'center',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setResolution(2);
     this.add(this.caption);
 
     this.year = s.add.text(0, h / 2 + 54, this.milestone.year, {
@@ -126,7 +128,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
       stroke: '#2a1a0a',
       strokeThickness: 2,
       fontStyle: 'italic',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setResolution(2);
     this.add(this.year);
 
     // iris reveal start state
