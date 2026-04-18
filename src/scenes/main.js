@@ -152,9 +152,11 @@ class MainScene extends Phaser.Scene {
         speedY: { min: -2, max: 4 },
         lifespan: { min: 10000, max: 15000 },
         scale: { min: 1, max: 1.8 },
-        alpha: { start: 0, end: 0 },
-        // fade in then out via lifecycle
-        alphaCustomEase: (t) => Math.sin(t * Math.PI) * 0.42,
+        // onUpdate callback drives the alpha envelope (in-out fade across lifespan)
+        alpha: {
+          onEmit: () => 0,
+          onUpdate: (_particle, _key, t) => Math.sin(t * Math.PI) * 0.42,
+        },
         frequency: 500,
         emitting: false,
       }).setScrollFactor(0).setDepth(900),
