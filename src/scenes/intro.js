@@ -152,15 +152,21 @@ class IntroScene extends Phaser.Scene {
     // so the AudioContext is allowed to start. The sound is attached to the
     // global sound manager and persists across scene transitions.
     if (this.cache.audio.has('bgm') && !this.sound.get('bgm')) {
-      const bgm = this.sound.add('bgm', { loop: true, volume: 0 });
+      const bgm = this.sound.add('bgm', { loop: true, volume: 0.05 });
       bgm.play();
-      // gentle fade-in so it doesn't punch in at full volume
-      this.tweens.add({
-        targets: bgm,
-        volume: 0.4,
-        duration: 2200,
-        ease: 'Sine.easeIn',
-      });
+      // fade up via a game-level event (not scene tweens — scene transitions
+      // out of Intro before a scene tween could finish, so it would freeze
+      // at near-zero volume).
+      const startAt = this.game.loop.now;
+      const rampMs = 2200;
+      const target = 0.4;
+      const step = () => {
+        const t = Math.min(1, (this.game.loop.now - startAt) / rampMs);
+        bgm.setVolume(0.05 + (target - 0.05) * t);
+        if (t < 1) return;
+        this.game.events.off('step', step);
+      };
+      this.game.events.on('step', step);
     }
 
     this.cameras.main.fadeOut(600, 255, 240, 200);
