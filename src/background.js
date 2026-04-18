@@ -171,30 +171,45 @@ class Background {
     const baseY = WORLD.groundY - 160;
     const rnd = mulberry32(4411);
 
-    // jagged snowy mountain ridge across the full span
+    // Mountains fade out smoothly before university (m4 at x=3300). No
+    // mountains in St Petersburg — she's by the river + palaces there.
+    const mountainEnd = 2800; // hard end
+    const fadeStart   = 2300; // fade begins (just before school graduation)
+    const fadeAt = (x) => {
+      if (x <= fadeStart) return 1;
+      if (x >= mountainEnd) return 0;
+      return (mountainEnd - x) / (mountainEnd - fadeStart);
+    };
+
+    // jagged snowy mountain ridge across the faded span
     const points = [{ x: span.start - 40, y: WORLD.groundY }];
-    for (let x = span.start - 40; x <= span.end + 40; x += 80) {
-      const h = 110 + rnd() * 90;
+    for (let x = span.start - 40; x <= mountainEnd; x += 80) {
+      const h = (110 + rnd() * 90) * fadeAt(x);
       points.push({ x, y: baseY - h });
-      points.push({ x: x + 40 + rnd() * 20, y: baseY - h + 40 + rnd() * 40 });
+      const dipX = x + 40 + rnd() * 20;
+      const dipH = h * 0.6 - 40 - rnd() * 40;
+      points.push({ x: dipX, y: baseY - dipH });
     }
-    points.push({ x: span.end + 40, y: WORLD.groundY });
+    points.push({ x: mountainEnd, y: WORLD.groundY });
     g.fillStyle(biome.silhouetteFar, 0.88);
     g.fillPoints(points, true);
 
-    // snow caps on peak points
+    // snow caps on peak points (only where peaks are tall enough to warrant)
     g.fillStyle(0xFFFFFF, 0.9);
     for (let i = 1; i < points.length - 1; i += 2) {
       const p = points[i];
-      g.fillTriangle(p.x - 14, p.y + 18, p.x + 14, p.y + 18, p.x, p.y - 2);
+      if (WORLD.groundY - p.y > 40) {
+        g.fillTriangle(p.x - 14, p.y + 18, p.x + 14, p.y + 18, p.x, p.y - 2);
+      }
     }
 
-    // mid-distance lower snow ridge
+    // mid-distance lower snow ridge — also fades
     const lowRidge = [{ x: span.start - 40, y: WORLD.groundY }];
-    for (let x = span.start - 40; x <= span.end + 40; x += 120) {
-      lowRidge.push({ x, y: baseY + 30 - rnd() * 40 });
+    for (let x = span.start - 40; x <= mountainEnd; x += 120) {
+      const h = (30 + rnd() * 40) * fadeAt(x);
+      lowRidge.push({ x, y: baseY + 30 - h });
     }
-    lowRidge.push({ x: span.end + 40, y: WORLD.groundY });
+    lowRidge.push({ x: mountainEnd, y: WORLD.groundY });
     g.fillStyle(biome.silhouetteMid, 0.82);
     g.fillPoints(lowRidge, true);
   }
