@@ -17,15 +17,21 @@ class Background {
     //   -100 sky     -80 far silhouette   -70 clouds
     //   -60 mid hills -58 water            -56 landmarks
     //   -55 trees    -40 ground           10 decor
-    this.skyGfx        = s.add.graphics().setDepth(-100).setScrollFactor(1, 1);
-    this.farGfx        = s.add.graphics().setDepth(-80).setScrollFactor(0.25, 1);
-    this.cloudGfx      = s.add.graphics().setDepth(-70).setScrollFactor(0.35, 1);
-    this.midGfx        = s.add.graphics().setDepth(-60).setScrollFactor(0.5, 1);
-    this.waterGfx      = s.add.graphics().setDepth(-58).setScrollFactor(0.62, 1);
-    this.landmarkGfx   = s.add.graphics().setDepth(-56).setScrollFactor(0.54, 1);
-    this.treeGfx       = s.add.graphics().setDepth(-55).setScrollFactor(0.58, 1);
-    this.nearGfx       = s.add.graphics().setDepth(-40);
-    this.decorGfx      = s.add.graphics().setDepth(10);
+    //
+    // All biome-aware content lives at scrollFactor 1 so each biome's
+    // scenery is locked to its world x-range and doesn't parallax-bleed
+    // into the neighbouring biome (e.g. Siberian mountains lingering in
+    // St Petersburg). Only the sky gradient (world-wide) and clouds
+    // keep their gentle parallax for atmospheric depth.
+    this.skyGfx      = s.add.graphics().setDepth(-100).setScrollFactor(1, 1);
+    this.farGfx      = s.add.graphics().setDepth(-80).setScrollFactor(1, 1);
+    this.cloudGfx    = s.add.graphics().setDepth(-70).setScrollFactor(0.35, 1);
+    this.midGfx      = s.add.graphics().setDepth(-60).setScrollFactor(1, 1);
+    this.waterGfx    = s.add.graphics().setDepth(-58).setScrollFactor(1, 1);
+    this.landmarkGfx = s.add.graphics().setDepth(-56).setScrollFactor(1, 1);
+    this.treeGfx     = s.add.graphics().setDepth(-55).setScrollFactor(1, 1);
+    this.nearGfx     = s.add.graphics().setDepth(-40);
+    this.decorGfx    = s.add.graphics().setDepth(10);
 
     this._paintWorldSky();
     this._paintFarSilhouettes();
