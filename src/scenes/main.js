@@ -37,24 +37,14 @@ class MainScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.katya, true, 0.1, 0.1, 0, 80);
     this.cameras.main.setDeadzone(80, 40);
 
-    // photo frames at each milestone — raised higher to match 2x size
+    // photo frames at each milestone — raised higher to match 2x size.
+    // Reveals are triggered by x-position in update() (not physics overlap),
+    // because a tall jump can take Katya's hitbox entirely above a ground-
+    // level trigger zone and miss it.
     this.frames = [];
     MILESTONES.forEach(m => {
       const frame = new PhotoFrame(this, m.x, groundY - 340, m);
       this.frames.push(frame);
-
-      const zone = this.add.zone(m.x, groundY - 40, 60, 80);
-      this.physics.add.existing(zone, true);
-      zone.milestone = m;
-      zone.frame = frame;
-
-      this.physics.add.overlap(this.katya, zone, () => {
-        if (!frame.revealed) {
-          frame.reveal();
-          this._chime(m.accent);
-          this.cameras.main.shake(120, 0.003);
-        }
-      });
     });
 
     // HUD
@@ -130,6 +120,17 @@ class MainScene extends Phaser.Scene {
     const targetForm = this._computeFormAt(this.katya.x);
     if (targetForm && this.katya.state !== targetForm && !this.katya._growing) {
       this.katya.grow(targetForm);
+    }
+
+    // Photo reveals based on x-position — vertical position doesn't matter,
+    // so jumps over milestones no longer skip them.
+    const katyaX = this.katya.x;
+    for (const frame of this.frames) {
+      if (!frame.revealed && Math.abs(katyaX - frame.milestone.x) < 32) {
+        frame.reveal();
+        this._chime(frame.milestone.accent);
+        this.cameras.main.shake(120, 0.003);
+      }
     }
 
     const p = Phaser.Math.Clamp(this.katya.x / WORLD.width, 0, 1);

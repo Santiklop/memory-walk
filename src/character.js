@@ -82,7 +82,7 @@ const KATYA_PARAMS = {
     ...ADULT_BASE,
     outfit: 'dress', dressColor: 0x3F8A82, dressTrim: 0xEFF7F5,
     necklace: true,
-    stroller: true,
+    babyBundle: true,
   },
   london: {
     ...ADULT_BASE,
@@ -126,21 +126,18 @@ class Katya extends Phaser.GameObjects.Container {
     this.armBack   = this.scene.add.graphics();
     this.legBack   = this.scene.add.graphics();
     this.legFront  = this.scene.add.graphics();
-    this.stroller  = this.scene.add.graphics();
     this.armFront  = this.scene.add.graphics();
     this.head      = this.scene.add.graphics();
     this.frontHair = this.scene.add.graphics();
     this.face      = this.scene.add.graphics();
     this.accessory = this.scene.add.graphics(); // on-top accessories (hat, veil)
 
-    // armFront is drawn AFTER stroller so her hand appears on the handle.
     this.add([
       this.backHair,
       this.legBack,
       this.bodyG,
       this.armBack,
       this.legFront,
-      this.stroller,
       this.armFront,
       this.head,
       this.frontHair,
@@ -174,7 +171,6 @@ class Katya extends Phaser.GameObjects.Container {
     this._drawBody(P, bodyTopY, bodyBottomY);
     this._drawArms(P);
     this._drawLegs(P);
-    this._drawStroller(P);
     this._drawHead(P, bodyTopY, headCenterY);
     this._drawFrontHair(P, headCenterY);
     this._drawFace(P, headCenterY);
@@ -239,6 +235,49 @@ class Katya extends Phaser.GameObjects.Container {
       g.fillCircle(0, bodyTopY + 6, 1.4);
     }
 
+    if (P.babyBundle) {
+      this._drawBabyBundle(g, P, bodyTopY);
+    }
+  }
+
+  _drawBabyBundle(g, P, bodyTopY) {
+    // Baby Anna cradled in Katya's arms. Sized up ~35% from the original
+    // draft so her face is clearly readable on-screen.
+    const bY = bodyTopY + P.bodyH * 0.38;
+    const bX = -1;
+
+    // outer blanket (soft pink)
+    g.fillStyle(0xFFD9E4, 1);
+    g.fillEllipse(bX, bY, 40, 30);
+    // inner fold (deeper pink)
+    g.fillStyle(0xFFB8D9, 0.95);
+    g.fillEllipse(bX, bY + 4, 34, 24);
+
+    // baby face
+    g.fillStyle(P.skin, 1);
+    g.fillCircle(bX + 9, bY - 3, 9);
+
+    // hair tuft
+    g.fillStyle(0x2C1810, 1);
+    g.fillEllipse(bX + 9, bY - 10, 9, 3.5);
+
+    // eyes (closed, asleep)
+    g.lineStyle(1.2, 0x1a1a1a, 1);
+    g.lineBetween(bX + 5, bY - 3, bX + 8, bY - 3);
+    g.lineBetween(bX + 10, bY - 3, bX + 13, bY - 3);
+
+    // cheeks
+    g.fillStyle(0xFFB8D9, 0.7);
+    g.fillCircle(bX + 5, bY, 1.5);
+    g.fillCircle(bX + 13, bY, 1.5);
+
+    // tiny smile
+    g.fillStyle(0xC44A5C, 1);
+    g.fillCircle(bX + 9, bY + 2, 0.9);
+
+    // bundle edge sheen
+    g.fillStyle(0xffffff, 0.4);
+    g.fillEllipse(bX - 11, bY - 2, 10, 6);
   }
 
   _drawDress(g, P, bodyTopY, bodyBottomY) {
@@ -403,86 +442,6 @@ class Katya extends Phaser.GameObjects.Container {
     g.fillRect(-halfSweater * 0.9, waistY - 1, halfSweater * 1.8, 1.5);
   }
 
-  _drawStroller(P) {
-    const g = this.stroller;
-    g.clear();
-    if (!P.stroller) return;
-
-    // Stroller sits to Katya's right (positive x) when she faces right.
-    // When facing left, the whole Container mirrors, so the stroller
-    // naturally appears in the direction of travel.
-    const wheelY    = -4;
-    const backX     = 14;
-    const frontX    = 42;
-    const wheelR    = 5;
-    const basketTop = -22;
-    const basketBot = -12;
-    const canopyTop = -32;
-    const handleGripX = -4;
-    const handleGripY = -32;
-
-    // wheels (with rim + hub)
-    [backX, frontX].forEach((cx) => {
-      g.fillStyle(0x1a1a1a, 1);
-      g.fillCircle(cx, wheelY, wheelR);
-      g.fillStyle(0x787878, 1);
-      g.fillCircle(cx, wheelY, wheelR - 2);
-      g.fillStyle(0x1a1a1a, 1);
-      g.fillCircle(cx, wheelY, 1);
-    });
-
-    // chrome frame struts
-    g.lineStyle(2, 0x8A8A95, 1);
-    g.lineBetween(backX, wheelY - wheelR, backX + 1, basketBot);
-    g.lineBetween(frontX, wheelY - wheelR, frontX - 1, basketBot);
-
-    // bassinet body — cream fabric with pink trim
-    g.fillStyle(0xF5ECD9, 1);
-    g.fillRoundedRect(backX - 2, basketTop, frontX - backX + 4, basketBot - basketTop, 3);
-    g.fillStyle(0xEC7DA5, 1);
-    g.fillRect(backX - 2, basketBot - 3, frontX - backX + 4, 3);
-    g.fillStyle(0xFFFFFF, 0.25);
-    g.fillRect(backX, basketTop + 2, 1.5, basketBot - basketTop - 5);
-
-    // canopy (half-dome), shifted toward front
-    const ccx = (backX + frontX) / 2 + 3;
-    const canopyPoints = [
-      { x: ccx - 13, y: basketTop + 1 },
-      { x: ccx - 13, y: basketTop - 3 },
-      { x: ccx - 10, y: basketTop - 8 },
-      { x: ccx - 5,  y: canopyTop + 2 },
-      { x: ccx,      y: canopyTop },
-      { x: ccx + 5,  y: canopyTop + 2 },
-      { x: ccx + 10, y: basketTop - 8 },
-      { x: ccx + 13, y: basketTop - 3 },
-      { x: ccx + 13, y: basketTop + 1 },
-    ];
-    g.fillStyle(0xEC7DA5, 1);
-    g.fillPoints(canopyPoints, true);
-    g.fillStyle(0xDD6B95, 1);
-    g.fillRect(ccx - 13, basketTop + 1, 26, 1.5);
-
-    // baby face peeking out from under the canopy
-    const babyX = ccx - 5;
-    const babyY = basketTop - 2;
-    g.fillStyle(P.skin, 1);
-    g.fillCircle(babyX, babyY, 3.5);
-    g.fillStyle(0x2C1810, 1);
-    g.fillEllipse(babyX, babyY - 3, 4.5, 1.8);
-    g.fillStyle(0x1a1a1a, 1);
-    g.fillCircle(babyX - 1.1, babyY, 0.5);
-    g.fillCircle(babyX + 1.1, babyY, 0.5);
-    g.fillStyle(0xFFB8D9, 0.6);
-    g.fillCircle(babyX - 2, babyY + 1.2, 0.9);
-    g.fillCircle(babyX + 2, babyY + 1.2, 0.9);
-
-    // handle bar from back of basket up-back toward the pusher
-    g.lineStyle(2.5, 0x8A8A95, 1);
-    g.lineBetween(backX - 1, basketTop + 1, handleGripX, handleGripY);
-    // rubber grip
-    g.fillStyle(0x2A2A2A, 1);
-    g.fillRoundedRect(handleGripX - 6, handleGripY - 2, 10, 4, 2);
-  }
 
   _drawArms(P) {
     // Sleeve color + ratio varies by outfit:
@@ -724,16 +683,10 @@ class Katya extends Phaser.GameObjects.Container {
     } else if (moving) {
       this.runPhase += dt * 0.016;
       const sw = Math.sin(this.runPhase * 12) * 0.9;
-      if (this.p.stroller) {
-        // pushing pose — both arms reach forward with a tiny sway.
-        // Legs still swing normally because she's walking.
-        const sway = Math.sin(this.runPhase * 12) * 0.18;
-        this.armFront.setRotation(0.75 + sway);
-        this.armBack.setRotation(0.6 - sway);
-      } else {
-        this.armFront.setRotation(-sw);
-        this.armBack.setRotation(sw);
-      }
+      // cradling a bundle in her arms — front arm barely swings
+      const armFrontAmp = this.p.babyBundle ? 0.25 : 1;
+      this.armFront.setRotation(-sw * armFrontAmp);
+      this.armBack.setRotation(sw);
       this.legFront.setRotation(sw * 0.7);
       this.legBack.setRotation(-sw * 0.7);
       const bob = Math.abs(Math.sin(this.runPhase * 24)) * -1.5;
@@ -745,10 +698,10 @@ class Katya extends Phaser.GameObjects.Container {
     } else {
       const t = this.scene.time.now * 0.002;
       const breath = Math.sin(t) * 0.5;
-      if (this.p.stroller) {
-        // at rest but still holding the handle
-        this.armFront.setRotation(0.75);
-        this.armBack.setRotation(0.6);
+      if (this.p.babyBundle) {
+        // at rest, cradling — front arm held across body
+        this.armFront.setRotation(-0.2 + breath * 0.02);
+        this.armBack.setRotation(-0.1 - breath * 0.02);
       } else {
         this.armFront.setRotation( 0.05 + breath * 0.02);
         this.armBack.setRotation(-0.05 - breath * 0.02);
