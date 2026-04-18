@@ -75,6 +75,11 @@ class MainScene extends Phaser.Scene {
     // atmospheric particles per biome (snow / leaves / mist / rain / petals)
     this._setupBiomeParticles();
     this._lastParticleBiome = null;
+
+    // Amsterdam ambient bikes — a cyclist periodically rides across the
+    // viewport while Katya is in the Amsterdam segment.
+    this._bikeTimer = 0;
+    this._bikeInterval = 3500; // first bike comes sooner
   }
 
   _setupBiomeParticles() {
@@ -199,6 +204,126 @@ class MainScene extends Phaser.Scene {
     this._lastParticleBiome = biome.name;
   }
 
+  _updateAmsterdamBikes(delta) {
+    if (this._lastParticleBiome !== 'amsterdam') {
+      this._bikeTimer = 0;
+      return;
+    }
+    this._bikeTimer += delta;
+    if (this._bikeTimer >= this._bikeInterval) {
+      this._bikeTimer = 0;
+      this._bikeInterval = 3500 + Math.random() * 4500; // 3.5 – 8s between bikes
+      this._spawnAmsterdamBike();
+    }
+  }
+
+  _spawnAmsterdamBike() {
+    const { viewW, groundY } = WORLD;
+    const tex = this._ensureBikeTexture();
+    const dir = Math.random() > 0.5 ? 1 : -1;
+    const startX = dir === 1 ? -70 : viewW + 70;
+    const endX = dir === 1 ? viewW + 70 : -70;
+    const y = groundY - 14;
+    // A bike heading the same direction as Katya rides behind her (depth 12),
+    // an oncoming one rides in front (depth 18) — creates a believable
+    // two-lane street feel.
+    const depth = dir === 1 ? 12 : 18;
+    const bike = this.add.image(startX, y, tex)
+      .setScrollFactor(0)
+      .setDepth(depth)
+      .setScale(0.95);
+    if (dir === -1) bike.setFlipX(true);
+    const duration = 5000 + Math.random() * 2500;
+    this.tweens.add({
+      targets: bike,
+      x: endX,
+      duration: duration,
+      ease: 'Linear',
+      onComplete: () => bike.destroy(),
+    });
+    // tiny bob as she rides over cobbles
+    this.tweens.add({
+      targets: bike,
+      y: { from: y, to: y - 1.2 },
+      duration: 110,
+      yoyo: true,
+      repeat: Math.floor(duration / 220),
+    });
+  }
+
+  _ensureBikeTexture() {
+    const key = 'tex_cyclist';
+    if (this.textures.exists(key)) return key;
+    const g = this.add.graphics({ x: 0, y: 0, add: false });
+    const W = 48, H = 44;
+    // wheels
+    g.lineStyle(1.6, 0x1A1A1A, 1);
+    g.strokeCircle(9, 34, 8);
+    g.strokeCircle(37, 34, 8);
+    // spokes hint
+    g.lineStyle(0.5, 0x606060, 0.9);
+    [0, Math.PI / 2].forEach((a) => {
+      g.lineBetween(9 + Math.cos(a) * 7, 34 + Math.sin(a) * 7, 9 - Math.cos(a) * 7, 34 - Math.sin(a) * 7);
+      g.lineBetween(37 + Math.cos(a) * 7, 34 + Math.sin(a) * 7, 37 - Math.cos(a) * 7, 34 - Math.sin(a) * 7);
+    });
+    g.fillStyle(0x2A2A2A, 1);
+    g.fillCircle(9, 34, 1.4);
+    g.fillCircle(37, 34, 1.4);
+    // frame (Dutch city-bike style — navy blue)
+    const frame = 0x2B4A6F;
+    g.lineStyle(2, frame, 1);
+    g.lineBetween(9, 34, 24, 18);  // down-tube
+    g.lineBetween(24, 18, 37, 34); // seat-tube
+    g.lineBetween(9, 34, 28, 34);  // chain-stay
+    g.lineBetween(24, 18, 32, 17); // top-tube to handlebar
+    // handlebar post + bars
+    g.lineBetween(33, 16, 33, 9);
+    g.lineBetween(29, 9, 37, 9);
+    // seat
+    g.fillStyle(0x1A1A1A, 1);
+    g.fillRect(20, 16, 8, 2.5);
+    // pedal crank
+    g.lineStyle(1.5, frame, 1);
+    g.lineBetween(23, 32, 23, 36);
+    g.fillStyle(0x1A1A1A, 1);
+    g.fillRect(21, 35, 4, 1.5);
+    // front basket
+    g.lineStyle(1.2, 0x8B5A2B, 1);
+    g.strokeRect(33, 11, 9, 6);
+    g.lineBetween(34, 11, 34, 17);
+    g.lineBetween(37, 11, 37, 17);
+    g.lineBetween(40, 11, 40, 17);
+    // flowers in basket
+    g.fillStyle(0xE63946, 1);
+    g.fillCircle(35, 10, 1.5);
+    g.fillStyle(0xFFD86B, 1);
+    g.fillCircle(38, 10, 1.3);
+    g.fillStyle(0xE879A7, 1);
+    g.fillCircle(40, 11, 1.4);
+    // rider torso (cream shirt)
+    g.fillStyle(0xFDF6E3, 1);
+    g.fillRect(19, 6, 9, 12);
+    g.fillStyle(frame, 0.25);
+    g.fillRect(19, 14, 9, 4); // shadow into frame
+    // arm reaching forward
+    g.lineStyle(2, 0xFDF6E3, 1);
+    g.lineBetween(27, 10, 32, 11);
+    // rider head
+    g.fillStyle(0xF4C8AA, 1);
+    g.fillCircle(24, 2, 3.5);
+    // hair
+    g.fillStyle(0x2C1810, 1);
+    g.fillEllipse(24, -1, 8, 3);
+    g.fillEllipse(26, 1, 4, 5);
+    // rider legs (navy jeans)
+    g.fillStyle(frame, 1);
+    g.fillRect(20, 18, 2.5, 14);
+    g.fillRect(25, 18, 2.5, 14);
+    g.generateTexture(key, W, H);
+    g.destroy();
+    return key;
+  }
+
   _buildHUD() {
     const { viewW } = WORLD;
     const barX = 32, barY = 24, barW = viewW - 64, barH = 10;
@@ -250,6 +375,9 @@ class MainScene extends Phaser.Scene {
 
     // Swap atmospheric particles when Katya crosses into a new biome.
     this._updateBiomeParticles();
+
+    // Spawn the occasional cyclist while she's in Amsterdam.
+    this._updateAmsterdamBikes(delta);
 
     // Photo reveals based on x-position — vertical position doesn't matter,
     // so jumps over milestones no longer skip them.

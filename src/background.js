@@ -880,10 +880,26 @@ class Background {
     // early in the Amsterdam segment
     this._drawDutchChurch(g, span.start + 300, baseY, biome);
 
-    // row of narrow canal houses, but skip the area where the church sits
-    const churchBox = { left: span.start + 260, right: span.start + 360 };
+    // between "first apartment" (x=13200) and "today" (x=14200): tulip
+    // market, outdoor café, park with bench + small tree + flowerbed.
+    this._drawTulipMarket(g, 13370, baseY);
+    this._drawOutdoorCafe(g, 13700, baseY);
+    this._drawCanalParkBench(g, 14060, baseY);
+
+    // ornamental streetlamps along the walk
+    [12950, 13280, 13550, 13870, 14180, 14520].forEach((sx) => {
+      this._drawStreetlamp(g, sx, baseY);
+    });
+
+    // row of narrow canal houses, skipping the spots where other landmarks sit
+    const skipRanges = [
+      { left: span.start + 260, right: span.start + 360 }, // church
+      { left: 13290, right: 13460 },                         // tulip market
+      { left: 13610, right: 13810 },                         // café
+      { left: 13990, right: 14160 },                         // park bench
+    ];
     for (let x = span.start + 40; x < span.end - 260; x += 52 + rnd() * 10) {
-      if (x > churchBox.left && x < churchBox.right) continue;
+      if (skipRanges.some((r) => x > r.left && x < r.right)) continue;
       const w = 38 + rnd() * 14;
       const h = 72 + rnd() * 50;
       const body = bodies[Math.floor(rnd() * bodies.length)];
@@ -1053,6 +1069,196 @@ class Background {
     // water reflection
     g.fillStyle(0xFFFFFF, 0.3);
     g.fillRect(x - w / 2 + 4, y + h - 1, w - 8, 1);
+  }
+
+  _drawTulipMarket(g, x, baseY) {
+    const w = 96, h = 42;
+    // wooden stall body
+    g.fillStyle(0x8B5A2B, 1);
+    g.fillRect(x - w / 2, baseY - h, w, h);
+    g.fillStyle(0x6B4520, 1);
+    g.fillRect(x - w / 2, baseY - h, w, 3);
+    g.fillStyle(0xA67745, 0.7);
+    g.fillRect(x - w / 2, baseY - h + 18, w, 1);
+    // peaked red canopy with white stripes
+    g.fillStyle(0xCB4E57, 1);
+    g.fillTriangle(x - w / 2 - 5, baseY - h, x + w / 2 + 5, baseY - h, x, baseY - h - 22);
+    g.fillStyle(0xFFFFFF, 0.85);
+    for (let i = 0; i < 4; i++) {
+      g.fillTriangle(
+        x - w / 2 - 5 + i * 30, baseY - h,
+        x - w / 2 - 5 + (i + 0.5) * 30, baseY - h,
+        x - w / 2 - 5 + i * 27, baseY - h - 15 + Math.abs(i - 1.5) * 3,
+      );
+    }
+    // flower bins at front with rows of tulips
+    const tulipColors = [0xE63946, 0xFF8A3D, 0xFFD86B, 0xE879A7, 0xFFFFFF, 0xF9B4B4];
+    for (let col = 0; col < 5; col++) {
+      const cx = x - w / 2 + 14 + col * 17;
+      // wooden bin
+      g.fillStyle(0x5C3D20, 1);
+      g.fillRect(cx - 7, baseY - 14, 14, 14);
+      g.fillStyle(0x3E2418, 0.6);
+      g.fillRect(cx - 7, baseY - 14, 14, 2);
+      // tulips poking out
+      const c = tulipColors[col % tulipColors.length];
+      for (let t = 0; t < 3; t++) {
+        const tx = cx - 5 + t * 5;
+        g.fillStyle(0x4E7C3F, 1);
+        g.fillRect(tx - 0.5, baseY - 24, 1, 10);
+        g.fillStyle(c, 1);
+        g.fillTriangle(tx - 3, baseY - 24, tx, baseY - 30, tx + 3, baseY - 24);
+        g.fillStyle(lerpColor(c, 0xffffff, 0.35), 0.8);
+        g.fillTriangle(tx - 1.5, baseY - 24, tx, baseY - 28, tx + 0.5, baseY - 25);
+      }
+    }
+    // small sign above canopy: "BLOEMEN"
+    g.fillStyle(0xFDF6E3, 1);
+    g.fillRect(x - 28, baseY - h - 30, 56, 10);
+    g.fillStyle(0x2E4B6B, 0.95);
+    g.fillRect(x - 28, baseY - h - 30, 56, 2);
+    g.fillStyle(0x2A1E14, 0.85);
+    // simulate "BLOEMEN" lettering with tiny rects
+    for (let i = 0; i < 7; i++) {
+      g.fillRect(x - 24 + i * 7, baseY - h - 26, 5, 4);
+    }
+  }
+
+  _drawOutdoorCafe(g, x, baseY) {
+    const w = 120;
+    // main building façade
+    g.fillStyle(0xA85F3F, 1);
+    g.fillRect(x - w / 2, baseY - 96, w, 96);
+    g.fillStyle(0x8B4A2F, 0.35);
+    for (let y = baseY - 88; y < baseY - 4; y += 6) {
+      g.fillRect(x - w / 2, y, w, 1);
+    }
+    // step-gable roof
+    g.fillStyle(0x5A3422, 1);
+    g.fillRect(x - w / 2 - 3, baseY - 96, w + 6, 6);
+    g.fillRect(x - 14, baseY - 104, 28, 8);
+    g.fillTriangle(x - 14, baseY - 104, x + 14, baseY - 104, x, baseY - 118);
+    // café sign band (cobalt blue)
+    g.fillStyle(0x2E4B6B, 1);
+    g.fillRect(x - 36, baseY - 88, 72, 12);
+    g.fillStyle(0xFFE6A7, 0.9);
+    // simulated "CAFÉ" lettering
+    const letters = [0, 14, 30, 48];
+    letters.forEach((dx) => {
+      g.fillRect(x - 30 + dx, baseY - 85, 10, 6);
+    });
+    // windows
+    g.fillStyle(0xFFF0C9, 0.9);
+    g.fillRect(x - w / 2 + 8, baseY - 70, 18, 32);
+    g.fillRect(x + w / 2 - 26, baseY - 70, 18, 32);
+    g.fillStyle(0x8B4A2F, 0.5);
+    g.fillRect(x - w / 2 + 8 + 9, baseY - 70, 1, 32);
+    g.fillRect(x + w / 2 - 26 + 9, baseY - 70, 1, 32);
+    // door
+    g.fillStyle(0x3E2418, 1);
+    g.fillRect(x - 10, baseY - 38, 20, 38);
+    g.fillStyle(0xCFA150, 0.8);
+    g.fillCircle(x + 7, baseY - 19, 0.8);
+    // outdoor tables with umbrellas and chairs
+    for (let i = 0; i < 3; i++) {
+      const tx = x - 44 + i * 36;
+      // umbrella (red-white)
+      g.fillStyle(0xE63946, 0.95);
+      g.fillTriangle(tx - 18, baseY - 26, tx + 18, baseY - 26, tx, baseY - 48);
+      g.fillStyle(0xFFFFFF, 0.92);
+      g.fillTriangle(tx - 18, baseY - 26, tx - 6, baseY - 26, tx - 12, baseY - 37);
+      g.fillTriangle(tx + 6, baseY - 26, tx + 18, baseY - 26, tx + 12, baseY - 37);
+      g.fillStyle(0xE63946, 0.95);
+      g.fillRect(tx - 1, baseY - 26, 2, 2); // bottom tab
+      // pole
+      g.fillStyle(0x2A1E14, 1);
+      g.fillRect(tx - 0.5, baseY - 26, 1, 20);
+      // table
+      g.fillStyle(0xF5ECD9, 1);
+      g.fillEllipse(tx, baseY - 6, 18, 5);
+      g.fillStyle(0x6E4D33, 1);
+      g.fillRect(tx - 1, baseY - 5, 2, 5);
+      // chairs
+      g.fillStyle(0x4E3A24, 1);
+      g.fillRect(tx - 12, baseY - 4, 4, 4);
+      g.fillRect(tx + 8, baseY - 4, 4, 4);
+      // coffee cups on table
+      g.fillStyle(0xFFFFFF, 1);
+      g.fillRect(tx - 5, baseY - 10, 4, 4);
+      g.fillStyle(0x3E2418, 1);
+      g.fillRect(tx - 4, baseY - 9, 2, 1);
+    }
+  }
+
+  _drawCanalParkBench(g, x, baseY) {
+    // small park tree behind the bench
+    g.fillStyle(0x5A3B24, 0.95);
+    g.fillRect(x - 26, baseY - 36, 4, 36);
+    g.fillStyle(0x3D6B33, 0.95);
+    g.fillCircle(x - 24, baseY - 46, 14);
+    g.fillCircle(x - 34, baseY - 40, 10);
+    g.fillCircle(x - 14, baseY - 40, 10);
+    g.fillCircle(x - 24, baseY - 54, 10);
+    g.fillStyle(0x5A9D56, 0.55);
+    g.fillCircle(x - 26, baseY - 52, 5);
+    // bench (wooden slats)
+    const bx = x;
+    g.fillStyle(0x5C3D20, 1);
+    g.fillRect(bx - 2, baseY - 12, 2, 12); // back left leg base
+    g.fillRect(bx + 30, baseY - 12, 2, 12); // right leg
+    g.fillStyle(0x6B4A2E, 1);
+    g.fillRoundedRect(bx - 4, baseY - 14, 40, 3, 1); // seat
+    // backrest posts
+    g.fillRect(bx - 2, baseY - 24, 2, 12);
+    g.fillRect(bx + 30, baseY - 24, 2, 12);
+    // backrest slats
+    g.fillRect(bx - 4, baseY - 22, 40, 2);
+    g.fillRect(bx - 4, baseY - 18, 40, 2);
+    // armrests
+    g.fillRect(bx - 4, baseY - 17, 2, 5);
+    g.fillRect(bx + 30, baseY - 17, 2, 5);
+    // flowerbed next to the bench
+    g.fillStyle(0x4C7B3E, 0.9);
+    g.fillEllipse(bx + 50, baseY - 3, 20, 5);
+    const petalCs = [0xE63946, 0xFFD86B, 0xE879A7];
+    for (let i = 0; i < 7; i++) {
+      const fx = bx + 42 + i * 3;
+      g.fillStyle(0x4C7B3E, 1);
+      g.fillRect(fx - 0.3, baseY - 8, 0.6, 5);
+      g.fillStyle(petalCs[i % petalCs.length], 1);
+      g.fillCircle(fx, baseY - 9, 1.4);
+      g.fillStyle(0xFFF4A0, 1);
+      g.fillCircle(fx, baseY - 9, 0.5);
+    }
+  }
+
+  _drawStreetlamp(g, x, baseY) {
+    // decorative cast-iron pole
+    g.fillStyle(0x2A2A2A, 1);
+    g.fillRect(x - 1, baseY - 42, 2, 42);
+    // ornate base
+    g.fillStyle(0x3A3A3A, 1);
+    g.fillRect(x - 4, baseY - 4, 8, 4);
+    g.fillRect(x - 3, baseY - 6, 6, 2);
+    // curving arm (short stub)
+    g.lineStyle(2, 0x2A2A2A, 1);
+    g.lineBetween(x, baseY - 38, x + 4, baseY - 42);
+    // lantern housing
+    g.fillStyle(0x2A1E14, 0.9);
+    g.fillRoundedRect(x + 2, baseY - 48, 10, 10, 2);
+    // glowing bulb
+    g.fillStyle(0xFFE6A8, 0.95);
+    g.fillRect(x + 4, baseY - 46, 6, 6);
+    g.fillStyle(0xFFFFFF, 0.85);
+    g.fillRect(x + 6, baseY - 44, 2, 2);
+    // warm halo
+    g.fillStyle(0xFFE6A8, 0.18);
+    g.fillCircle(x + 7, baseY - 43, 10);
+    g.fillStyle(0xFFE6A8, 0.08);
+    g.fillCircle(x + 7, baseY - 43, 16);
+    // tiny pointed top
+    g.fillStyle(0x2A2A2A, 1);
+    g.fillTriangle(x + 2, baseY - 48, x + 12, baseY - 48, x + 7, baseY - 54);
   }
 
   _drawCanalHouse(g, x, baseY, w, h, body, roof, biome) {
