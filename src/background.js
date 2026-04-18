@@ -876,8 +876,14 @@ class Background {
     const rnd = mulberry32(14021);
     const bodies = [biome.building, biome.buildingAlt1, biome.buildingAlt2, biome.buildingAlt3, biome.buildingAlt4];
 
-    // row of narrow canal houses
+    // signature: church with tall green spire (Westerkerk-inspired) placed
+    // early in the Amsterdam segment
+    this._drawDutchChurch(g, span.start + 300, baseY, biome);
+
+    // row of narrow canal houses, but skip the area where the church sits
+    const churchBox = { left: span.start + 260, right: span.start + 360 };
     for (let x = span.start + 40; x < span.end - 260; x += 52 + rnd() * 10) {
+      if (x > churchBox.left && x < churchBox.right) continue;
       const w = 38 + rnd() * 14;
       const h = 72 + rnd() * 50;
       const body = bodies[Math.floor(rnd() * bodies.length)];
@@ -885,18 +891,168 @@ class Background {
       this._drawCanalHouse(g, x, baseY, w, h, body, roof, biome);
     }
 
-    // bridges over water
-    for (let x = span.start + 180; x < span.end - 260; x += 420) {
-      this._drawBridge(g, x, baseY + 8, 120, 0x5A3C30);
-    }
+    // two styles of bridges for visual variety
+    const bridgeXs = [span.start + 180, span.start + 800, span.start + 1520, span.start + 2200];
+    bridgeXs.forEach((bx, i) => {
+      if (bx > span.end - 260) return;
+      if (i % 2 === 0) {
+        // stone arch bridge (more dramatic)
+        this._drawArchBridge(g, bx, baseY + 12, 140);
+      } else {
+        // simple curved wooden bridge
+        this._drawBridge(g, bx, baseY + 8, 120, 0x5A3C30);
+      }
+    });
 
-    // parked bikes leaning against canal railing
+    // a small canal boat floating in the water
+    this._drawCanalBoat(g, span.start + 600, baseY + 16);
+    this._drawCanalBoat(g, span.start + 1750, baseY + 16);
+
+    // parked bikes leaning along the canal
     for (let x = span.start + 140; x < span.end - 280; x += 240 + rnd() * 140) {
       this._drawBikeSilhouette(g, x, baseY);
     }
 
     // prominent windmill near end of biome
     this._drawWindmill(g, span.end - 180, baseY + 14, biome);
+  }
+
+  _drawDutchChurch(g, x, baseY, biome) {
+    // long rectangular nave
+    const bodyW = 70, bodyH = 78;
+    g.fillStyle(biome.buildingTrim, 1);
+    g.fillRect(x - bodyW / 2, baseY - bodyH, bodyW, bodyH);
+    g.fillStyle(lerpColor(biome.buildingTrim, 0x000000, 0.12), 0.5);
+    // subtle brick seams
+    for (let y = baseY - bodyH + 8; y < baseY - 4; y += 7) {
+      g.fillRect(x - bodyW / 2, y, bodyW, 1);
+    }
+
+    // arched windows along the nave
+    g.fillStyle(0xFFF0C9, 0.88);
+    for (let wy = baseY - bodyH + 18; wy < baseY - 22; wy += 22) {
+      g.fillRect(x - bodyW / 2 + 8, wy, 8, 16);
+      g.fillRect(x - 4, wy, 8, 16);
+      g.fillRect(x + bodyW / 2 - 16, wy, 8, 16);
+    }
+    // window arches (rounded tops hinted with small triangles)
+    g.fillStyle(biome.buildingTrim, 1);
+    [x - bodyW / 2 + 8, x - 4, x + bodyW / 2 - 16].forEach(wx => {
+      for (let wy = baseY - bodyH + 18; wy < baseY - 22; wy += 22) {
+        g.fillTriangle(wx - 1, wy, wx + 9, wy, wx + 4, wy - 4);
+      }
+    });
+
+    // pitched nave roof
+    g.fillStyle(biome.roofAccent, 1);
+    g.fillTriangle(x - bodyW / 2 - 4, baseY - bodyH + 2, x + bodyW / 2 + 4, baseY - bodyH + 2, x, baseY - bodyH - 20);
+
+    // TALL square tower on the left side (Westerkerk style)
+    const towerX = x - bodyW / 2 + 10;
+    const towerW = 26;
+    const towerH = 158;
+    g.fillStyle(biome.buildingTrim, 1);
+    g.fillRect(towerX - towerW / 2, baseY - towerH, towerW, towerH);
+    // tower horizontal bands
+    g.fillStyle(lerpColor(biome.buildingTrim, 0x000000, 0.18), 0.5);
+    g.fillRect(towerX - towerW / 2, baseY - towerH + 40, towerW, 2);
+    g.fillRect(towerX - towerW / 2, baseY - towerH + 80, towerW, 2);
+    g.fillRect(towerX - towerW / 2, baseY - towerH + 120, towerW, 2);
+    // clock face
+    g.fillStyle(0xF1E7C4, 1);
+    g.fillCircle(towerX, baseY - towerH + 24, 6);
+    g.fillStyle(0x32404C, 1);
+    g.fillRect(towerX - 0.5, baseY - towerH + 20, 1, 5);
+    g.fillRect(towerX, baseY - towerH + 24, 4, 1);
+    // belfry openings
+    g.fillStyle(0x2A1E14, 0.8);
+    g.fillRect(towerX - 5, baseY - towerH + 60, 4, 10);
+    g.fillRect(towerX + 1, baseY - towerH + 60, 4, 10);
+
+    // crowned top with green copper roof
+    g.fillStyle(0x6C8E6F, 1);
+    g.fillRect(towerX - towerW / 2 - 3, baseY - towerH - 4, towerW + 6, 6);
+    // bulbous dome
+    g.fillStyle(0x6C8E6F, 1);
+    g.fillEllipse(towerX, baseY - towerH - 18, 22, 26);
+    g.fillStyle(lerpColor(0x6C8E6F, 0xffffff, 0.3), 0.6);
+    g.fillEllipse(towerX - 4, baseY - towerH - 24, 8, 8);
+    // spike
+    g.fillStyle(biome.domeGold, 1);
+    g.fillRect(towerX - 1, baseY - towerH - 54, 2, 24);
+    // crown at top
+    g.fillStyle(biome.domeGold, 1);
+    g.fillCircle(towerX, baseY - towerH - 56, 3);
+    g.fillRect(towerX - 4, baseY - towerH - 52, 8, 2);
+
+    // main entrance
+    g.fillStyle(0x3E2418, 1);
+    g.fillRect(x + 4, baseY - 18, 14, 18);
+    g.fillTriangle(x + 4, baseY - 18, x + 18, baseY - 18, x + 11, baseY - 26);
+  }
+
+  _drawArchBridge(g, x, y, w) {
+    const arch = 22;
+    // stone body drawn as a fat curved line
+    g.lineStyle(7, 0x9E8A72, 1);
+    const points = [];
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12;
+      const px = x - w / 2 + w * t;
+      const py = y - Math.sin(t * Math.PI) * arch;
+      points.push(new Phaser.Math.Vector2(px, py));
+    }
+    g.strokePoints(points, false, false);
+    // darker stone underside
+    g.lineStyle(3, 0x6A5A48, 0.8);
+    const under = points.map(p => ({ x: p.x, y: p.y + 5 }));
+    g.strokePoints(under, false, false);
+    // railing posts
+    g.lineStyle(1.2, 0x6A5A48, 1);
+    for (let i = 1; i < 12; i += 2) {
+      const p = points[i];
+      g.lineBetween(p.x, p.y, p.x, p.y - 7);
+    }
+    // top rail
+    g.lineStyle(1.2, 0x6A5A48, 0.95);
+    const top = points.map(p => ({ x: p.x, y: p.y - 7 }));
+    g.strokePoints(top, false, false);
+    // keystone in the middle
+    g.fillStyle(0x7C6954, 1);
+    g.fillRect(x - 3, y - arch - 1, 6, 6);
+  }
+
+  _drawCanalBoat(g, x, y) {
+    // flat-bottomed Dutch canal boat (salonboot style)
+    const w = 56, h = 18;
+    // hull (dark wood)
+    g.fillStyle(0x4A3020, 1);
+    g.fillRoundedRect(x - w / 2, y, w, h, 4);
+    g.fillStyle(0x6A4A30, 1);
+    g.fillRect(x - w / 2 + 2, y + 1, w - 4, 3);
+    // cabin / salon top
+    g.fillStyle(0xF2E3C2, 1);
+    g.fillRect(x - w / 2 + 8, y - 10, w - 16, 10);
+    // windows
+    g.fillStyle(0x5BA0C0, 0.85);
+    for (let wx = x - w / 2 + 12; wx < x + w / 2 - 14; wx += 8) {
+      g.fillRect(wx, y - 7, 5, 4);
+    }
+    // cabin roof
+    g.fillStyle(0x5A3422, 1);
+    g.fillRect(x - w / 2 + 6, y - 12, w - 12, 2);
+    // tiny flag
+    g.fillStyle(0xC62B2E, 1);
+    g.fillRect(x + 6, y - 20, 6, 3);
+    g.fillStyle(0xFFFFFF, 1);
+    g.fillRect(x + 6, y - 17, 6, 2);
+    g.fillStyle(0x2D4DA0, 1);
+    g.fillRect(x + 6, y - 15, 6, 2);
+    g.fillStyle(0x2A1E14, 1);
+    g.fillRect(x + 5, y - 20, 1, 8);
+    // water reflection
+    g.fillStyle(0xFFFFFF, 0.3);
+    g.fillRect(x - w / 2 + 4, y + h - 1, w - 8, 1);
   }
 
   _drawCanalHouse(g, x, baseY, w, h, body, roof, biome) {
@@ -1002,18 +1158,72 @@ class Background {
     g.fillStyle(biome.roofAccent, 1);
     g.fillTriangle(x - 26, baseY - towerH + 10, x + 26, baseY - towerH + 10, x, baseY - towerH - 28);
     // hub
+    const hubX = x;
+    const hubY = baseY - towerH + 10;
     g.fillStyle(0x3F2A22, 1);
-    g.fillCircle(x, baseY - towerH + 10, 6);
-    // sails
-    g.lineStyle(5, 0xC94B53, 0.98);
-    g.lineBetween(x, baseY - towerH + 10, x + 56, baseY - towerH - 26);
-    g.lineBetween(x, baseY - towerH + 10, x - 56, baseY - towerH - 26);
-    g.lineBetween(x, baseY - towerH + 10, x + 56, baseY - towerH + 46);
-    g.lineBetween(x, baseY - towerH + 10, x - 56, baseY - towerH + 46);
-    // sail sheen
-    g.lineStyle(2, 0xFFFFFF, 0.35);
-    g.lineBetween(x + 8, baseY - towerH + 6, x + 52, baseY - towerH - 22);
-    g.lineBetween(x - 8, baseY - towerH + 6, x - 52, baseY - towerH - 22);
+    g.fillCircle(hubX, hubY, 6);
+
+    // traditional Dutch wieken — 4 wooden-lattice sails, tilted slightly off
+    // the pure X so they don't read as a crucifix.
+    const sailLen = 58;
+    const tilt = -Math.PI / 10; // ~18° clockwise offset from horizontal
+    const woodColor = 0x6E4D33;
+    const latticeColor = 0x8B6239;
+    const fabricColor = 0xEFE4C8;
+
+    const drawSail = (angle) => {
+      const ca = Math.cos(angle);
+      const sa = Math.sin(angle);
+      const px = -sa; // perpendicular direction
+      const py = ca;
+      const baseStart = 10; // sail fabric starts a bit out from hub
+      const fabricWidth = 9;
+
+      // main wooden arm (backbone)
+      g.lineStyle(3, woodColor, 1);
+      g.lineBetween(hubX, hubY, hubX + ca * sailLen, hubY + sa * sailLen);
+
+      // cream fabric trapezoid alongside the arm (like a stretched canvas)
+      const inner = { x: hubX + ca * baseStart, y: hubY + sa * baseStart };
+      const outer = { x: hubX + ca * sailLen, y: hubY + sa * sailLen };
+      g.fillStyle(fabricColor, 0.88);
+      g.fillPoints([
+        inner,
+        { x: inner.x + px * 2.5, y: inner.y + py * 2.5 },
+        { x: outer.x + px * fabricWidth, y: outer.y + py * fabricWidth },
+        outer,
+      ], true);
+
+      // wooden lattice crossbars along the sail
+      g.lineStyle(0.8, latticeColor, 0.9);
+      for (let t = 0.25; t <= 0.95; t += 0.16) {
+        const bx = hubX + ca * sailLen * t;
+        const by = hubY + sa * sailLen * t;
+        const stubWidth = 2 + t * fabricWidth;
+        g.lineBetween(bx, by, bx + px * stubWidth, by + py * stubWidth);
+      }
+
+      // outer rim of the sail
+      g.lineStyle(1, woodColor, 0.95);
+      g.lineBetween(
+        outer.x + px * fabricWidth,
+        outer.y + py * fabricWidth,
+        inner.x + px * 2.5,
+        inner.y + py * 2.5,
+      );
+    };
+
+    drawSail(tilt);
+    drawSail(tilt + Math.PI / 2);
+    drawSail(tilt + Math.PI);
+    drawSail(tilt + Math.PI * 1.5);
+
+    // hub cap on top of the sails
+    g.fillStyle(0x2A1E14, 1);
+    g.fillCircle(hubX, hubY, 4);
+    g.fillStyle(0x8B6239, 1);
+    g.fillCircle(hubX, hubY, 1.5);
+
     // door at base
     g.fillStyle(biome.buildingDark, 1);
     g.fillRect(x - 4, baseY - 12, 8, 12);
