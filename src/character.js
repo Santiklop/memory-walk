@@ -63,6 +63,12 @@ const KATYA_PARAMS = {
     outfit: 'dress', dressColor: 0x3F8A82, dressTrim: 0xEFF7F5,
     necklace: true,
   },
+  adult_grad: {
+    ...ADULT_BASE,
+    outfit: 'dress', dressColor: 0x3F8A82, dressTrim: 0xEFF7F5,
+    necklace: true,
+    gradHat: true,
+  },
   office: {
     ...ADULT_BASE,
     outfit: 'office',
@@ -85,6 +91,11 @@ const KATYA_PARAMS = {
   amsterdam: {
     ...ADULT_BASE,
     outfit: 'dress', dressColor: 0xEA8A3D, dressTrim: 0xFFE4CC,
+    necklace: true,
+  },
+  pink_dress: {
+    ...ADULT_BASE,
+    outfit: 'dress', dressColor: 0xEC7DA5, dressTrim: 0xFFE6EE,
     necklace: true,
   },
 };
