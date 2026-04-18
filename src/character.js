@@ -54,10 +54,11 @@ class Katya extends Phaser.GameObjects.Container {
     this.state = 'baby';
     this.facing = 1; // 1 = right, -1 = left
     this.runPhase = 0;
-    this._growScale = 1; // tweened during grow(); keeps facing logic decoupled
+    this._growing = false; // true while a grow() tween owns the scale
 
     this._buildParts();
     this._applyGrowth('baby', true);
+    this.setScale(1, 1);
 
     this.body.setMaxVelocity(320, 1200);
     this.body.setDragX(1400);
@@ -219,8 +220,8 @@ class Katya extends Phaser.GameObjects.Container {
     // bigger puff for the dramatic child -> teen jump; subtler otherwise
     const isDramatic = (this.state === 'child' && targetState === 'teen');
     const count = isDramatic ? 30 : 14;
-    const scaleUp = isDramatic ? 1.18 : 1.07;
-    const duration = isDramatic ? 190 : 150;
+    const scaleUp = isDramatic ? 1.22 : 1.08;
+    const duration = isDramatic ? 200 : 160;
     const tint = isDramatic
       ? [0xFFD86B, 0xFFFFFF, 0xFF9EBB]
       : [0xFFD86B, 0xFFFFFF, 0xFFE6A7];
@@ -237,12 +238,24 @@ class Katya extends Phaser.GameObjects.Container {
     burst.explode(count);
     s.time.delayedCall(900, () => burst.destroy());
 
-    // tween our custom `_growScale` field; update() multiplies this into setScale
+    // tween scale directly. while _growing is true, update() leaves scale alone
+    // so the tween has exclusive control and the form change actually lands.
+    this._growing = true;
+    const startSign = Math.sign(this.facing) || 1;
+
     s.tweens.add({
       targets: this,
-      _growScale: scaleUp,
+      scaleX: startSign * scaleUp,
+      scaleY: scaleUp,
       duration: duration, yoyo: true, ease: 'Sine.easeInOut',
       onYoyo: () => this._applyGrowth(targetState),
+      onComplete: () => {
+        // apply even if onYoyo was missed for any reason, then hand scale back
+        if (this.state !== targetState) this._applyGrowth(targetState);
+        const sign = Math.sign(this.facing) || 1;
+        this.setScale(sign, 1);
+        this._growing = false;
+      },
     });
   }
 
@@ -278,9 +291,14 @@ class Katya extends Phaser.GameObjects.Container {
       this.body.setVelocityY(jumpV);
     }
 
-    // face direction + growth scale combined — no conflicts with tweens
-    const sign = Math.sign(this.facing) || 1;
-    this.setScale(sign * this._growScale, this._growScale);
+    // face direction — only touch scale when we're NOT in a grow tween,
+    // so the tween can fully drive the scale during the form transition.
+    if (!this._growing) {
+      const sign = Math.sign(this.facing) || 1;
+      if (Math.sign(this.scaleX) !== sign) {
+        this.setScale(sign, 1);
+      }
+    }
 
     // animate limbs
     if (!onGround) {
