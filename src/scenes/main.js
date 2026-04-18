@@ -207,7 +207,7 @@ class MainScene extends Phaser.Scene {
       strokeThickness: 5,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(1002).setAlpha(0).setScale(0.7);
 
-    const katyaName = this.add.text(viewW / 2, viewH / 2 + 30, 'Katya', {
+    const katyaName = this.add.text(viewW / 2, viewH / 2 + 75, 'Katya', {
       fontFamily: 'Georgia, serif',
       fontSize: '120px',
       color: '#FFD86B',
@@ -216,14 +216,15 @@ class MainScene extends Phaser.Scene {
       strokeThickness: 6,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(1002).setAlpha(0).setScale(0.6);
 
-    // flourish underline
+    // flourish underline — sits below Katya's text
+    const flourishY = viewH / 2 + 150;
     const flourish = this.add.graphics().setScrollFactor(0).setDepth(1002).setAlpha(0);
     flourish.lineStyle(2, 0xFFD86B, 0.95);
-    flourish.lineBetween(viewW / 2 - 200, viewH / 2 + 100, viewW / 2 + 200, viewH / 2 + 100);
+    flourish.lineBetween(viewW / 2 - 200, flourishY, viewW / 2 + 200, flourishY);
     flourish.fillStyle(0xFFD86B, 1);
-    flourish.fillCircle(viewW / 2, viewH / 2 + 100, 3);
-    flourish.fillCircle(viewW / 2 - 70, viewH / 2 + 100, 2);
-    flourish.fillCircle(viewW / 2 + 70, viewH / 2 + 100, 2);
+    flourish.fillCircle(viewW / 2, flourishY, 3);
+    flourish.fillCircle(viewW / 2 - 70, flourishY, 2);
+    flourish.fillCircle(viewW / 2 + 70, flourishY, 2);
 
     this.tweens.add({ targets: banner,    alpha: 1, scale: 1, duration: 800, ease: 'Back.easeOut', delay: 200 });
     this.tweens.add({ targets: katyaName, alpha: 1, scale: 1, duration: 1000, ease: 'Back.easeOut', delay: 700 });
@@ -257,8 +258,9 @@ class MainScene extends Phaser.Scene {
     // After celebration — fade dim, shrink banner to top, start walk-back pan
     this.time.delayedCall(6500, () => {
       this.tweens.add({ targets: dim, alpha: 0, duration: 1000 });
+      // banner + Katya fade to a softer presence; flourish fully disappears
       this.tweens.add({
-        targets: [banner, katyaName, flourish],
+        targets: [banner, katyaName],
         alpha: 0.55,
         duration: 1200,
       });
@@ -267,10 +269,11 @@ class MainScene extends Phaser.Scene {
         targets: banner,    y: 70,  scale: 0.45, duration: 1200, ease: 'Sine.easeInOut',
       });
       this.tweens.add({
-        targets: katyaName, y: 105, scale: 0.45, duration: 1200, ease: 'Sine.easeInOut',
+        targets: katyaName, y: 130, scale: 0.45, duration: 1200, ease: 'Sine.easeInOut',
       });
+      // flourish fades out and lifts up — nothing else tweens its alpha
       this.tweens.add({
-        targets: flourish,  y: -20, alpha: 0, duration: 1000,
+        targets: flourish,  y: -40, alpha: 0, duration: 700, ease: 'Sine.easeIn',
       });
 
       const hint = this.add.text(viewW / 2, viewH - 44,
