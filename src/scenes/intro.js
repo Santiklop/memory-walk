@@ -26,6 +26,16 @@ class IntroScene extends Phaser.Scene {
     } else {
       loading.destroy();
     }
+
+    // Pre-load the Leningrad track too — it plays a 10-second clip at the
+    // University milestone before handing music back to the main loop.
+    if (!window.__leningradAudio) {
+      const len = new Audio();
+      len.preload = 'auto';
+      len.volume = 0;
+      window.__leningradAudio = len;
+      len.src = 'assets/music/Leningrad.mp3';
+    }
   }
 
   create() {
@@ -98,23 +108,37 @@ class IntroScene extends Phaser.Scene {
     const promptText = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
       ? 'tap to begin'
       : 'press SPACE or tap to begin';
+    this._promptText = promptText;
 
-    const prompt = this.add.text(viewW / 2, viewH - 80, promptText, {
+    // The prompt slot doubles as the loading indicator until photos finish.
+    const prompt = this.add.text(viewW / 2, viewH - 80, 'gathering memories…', {
       fontFamily: 'Georgia, serif',
       fontSize: '16px',
       color: '#ffffff',
       fontStyle: 'italic',
     }).setOrigin(0.5).setAlpha(0);
+    this._prompt = prompt;
 
     // animate in
     this.tweens.add({ targets: title, alpha: 1, scale: 1, duration: 1100, ease: 'Back.easeOut', delay: 300 });
     this.tweens.add({ targets: flourish, alpha: 1, duration: 1000, delay: 1100 });
     this.tweens.add({ targets: subtitle, alpha: 1, y: '-=8', duration: 1000, ease: 'Sine.easeOut', delay: 1400 });
     this.tweens.add({
-      targets: prompt, alpha: 0.9, duration: 800, delay: 2100,
-      onComplete: () => {
-        this.tweens.add({ targets: prompt, alpha: 0.3, duration: 900, yoyo: true, repeat: -1 });
-      }
+      targets: prompt, alpha: 0.85, duration: 800, delay: 2100,
+    });
+
+    // Start loading all photographs into the game-wide TextureManager so
+    // they're already in memory before MainScene begins. Input handlers are
+    // installed only after this completes — Katya can't start walking
+    // through unloaded memories.
+    MainScene.loadAllPhotos(this, (done, total) => {
+      prompt.setText(`gathering memories… ${done} / ${total}`);
+    }).then(() => {
+      prompt.setText(promptText);
+      this.tweens.add({ targets: prompt, alpha: 0.3, duration: 900, yoyo: true, repeat: -1 });
+      this.input.keyboard.once('keydown-SPACE', () => this._begin());
+      this.input.keyboard.once('keydown-ENTER', () => this._begin());
+      this.input.once('pointerdown', () => this._begin());
     });
 
     // petals drifting
@@ -131,10 +155,8 @@ class IntroScene extends Phaser.Scene {
       frequency: 260,
     });
 
-    // input
-    this.input.keyboard.once('keydown-SPACE', () => this._begin());
-    this.input.keyboard.once('keydown-ENTER', () => this._begin());
-    this.input.once('pointerdown', () => this._begin());
+    // Input is installed in the loader's .then() above, after all 88
+    // photos have decoded into textures.
   }
 
   _petalTex() {

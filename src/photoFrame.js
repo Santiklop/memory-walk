@@ -31,6 +31,8 @@ class PhotoFrame extends Phaser.GameObjects.Container {
 
     this.revealed = false;
     this.bornAt = 0;
+    this.photoIndex = 0;
+    this.photoImage = null;
   }
 
   _buildChildren() {
@@ -208,6 +210,7 @@ class PhotoFrame extends Phaser.GameObjects.Container {
       delay: 420,
       duration: 460,
       ease: 'Cubic.easeOut',
+      onComplete: () => this._mountFirstPhoto(),
     });
 
     // 5. shine sweep
@@ -351,6 +354,129 @@ class PhotoFrame extends Phaser.GameObjects.Container {
         s.time.delayedCall(1400, () => p.destroy());
       });
     }
+  }
+
+  // --- real photo handling ---
+
+  hasPhotos() {
+    return !!(this.milestone.photos && this.milestone.photos.length > 0);
+  }
+
+  canCycle() {
+    return !!(this.milestone.photos && this.milestone.photos.length > 1);
+  }
+
+  _mountFirstPhoto() {
+    if (!this.hasPhotos()) return;
+    const key = this.milestone.photos[0];
+    if (!this.scene.textures.exists(key)) return;
+    this._buildPhotoImage(key);
+  }
+
+  _buildPhotoImage(key) {
+    const s = this.scene;
+    // inner photo area dimensions match the grey placeholder above.
+    const pw = this.frameW - 44;
+    const ph = this.frameH - 80;
+
+    const img = s.add.image(0, 0, key).setOrigin(0.5);
+    // "contain" — scale uniformly so the whole photo fits inside pw x ph
+    const tex = img.texture.getSourceImage();
+    const scale = Math.min(pw / tex.width, ph / tex.height);
+    img.setScale(scale);
+
+    // No mask needed — "contain" sizing keeps the photo within the frame's
+    // inner area on its own. (Earlier attempt used a geometry mask anchored
+    // at local 0,0; geometry masks resolve in world space, so the mask was
+    // off in the corner of the level and clipped the photo out entirely.)
+    this.photoImage = img;
+    this.container.add(img);
+  }
+
+  cyclePhoto() {
+    if (!this.revealed || !this.canCycle()) return false;
+    const photos = this.milestone.photos;
+    // Advance to the next index — and keep advancing past any photos
+    // whose texture isn't loaded yet, so we still cycle in a defined
+    // order rather than getting stuck. Wraps via modulo. Up to N attempts
+    // so we never spin forever if every texture is somehow missing.
+    let key;
+    for (let attempts = 0; attempts < photos.length; attempts++) {
+      this.photoIndex = (this.photoIndex + 1) % photos.length;
+      key = photos[this.photoIndex];
+      if (this.scene.textures.exists(key)) break;
+    }
+    if (!this.scene.textures.exists(key)) return false;
+
+    const s = this.scene;
+    const accent = Phaser.Display.Color.HexStringToColor(this.milestone.accent).color;
+
+    // small sparkle pop on swap
+    const burst = s.add.particles(this.x, this.y, '__DEFAULT', {
+      speed: { min: 60, max: 160 },
+      lifespan: { min: 400, max: 700 },
+      scale: { start: 0.7, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint: [accent, 0xFFFFFF],
+      quantity: 24,
+      emitting: false,
+    }).setDepth(25);
+    burst.explode(24);
+    s.time.delayedCall(900, () => burst.destroy());
+
+    if (!this.photoImage) {
+      this._buildPhotoImage(key);
+      this._pulsePhoto();
+      return true;
+    }
+
+    // Cancel any in-flight cycle on this photo so rapid presses don't stack
+    // multiple shrink/grow tweens on the same target (which would otherwise
+    // leave the texture half-swapped or the scale stuck).
+    s.tweens.killTweensOf(this.photoImage);
+
+    // crossfade: shrink the current image, swap texture + rescale, pop it back.
+    s.tweens.add({
+      targets: this.photoImage,
+      scale: 0,
+      duration: 160,
+      ease: 'Cubic.easeIn',
+      onComplete: () => {
+        const img = this.photoImage;
+        img.setTexture(key);
+        const tex = img.texture.getSourceImage();
+        const pw = this.frameW - 44;
+        const ph = this.frameH - 80;
+        const targetScale = Math.min(pw / tex.width, ph / tex.height);
+        img.setScale(0);
+        s.tweens.add({
+          targets: img,
+          scale: targetScale,
+          duration: 260,
+          ease: 'Back.easeOut',
+        });
+      },
+    });
+    return true;
+  }
+
+  _pulsePhoto() {
+    if (!this.photoImage) return;
+    const base = this.photoImage.scaleX;
+    this.scene.tweens.add({
+      targets: this.photoImage,
+      scale: base * 1.08,
+      duration: 160,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  // Public version of _pulsePhoto — called by JumpButton when there's
+  // nothing to cycle to (single-photo or no-photo frames) so the press
+  // still has a visible effect.
+  pulseCurrentPhoto() {
+    this._pulsePhoto();
   }
 
   _emitPaperAirplanes() {

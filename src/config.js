@@ -25,8 +25,8 @@ const gameConfig = {
 // Run immediately or on load, whichever applies.
 (function boot() {
   if (document.readyState === 'complete') {
-    new Phaser.Game(gameConfig);
+    window.__game = new Phaser.Game(gameConfig);
   } else {
-    window.addEventListener('load', () => new Phaser.Game(gameConfig));
+    window.addEventListener('load', () => { window.__game = new Phaser.Game(gameConfig); });
   }
 })();

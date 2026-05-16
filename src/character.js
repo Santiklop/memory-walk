@@ -681,7 +681,10 @@ class Katya extends Phaser.GameObjects.Container {
       this.legFront.setRotation(0.6);
       this.legBack.setRotation(-0.3);
     } else if (moving) {
-      this.runPhase += dt * 0.016;
+      // Animation rate tuned to ~3–4 leg cycles/sec at 60fps — runPhase
+      // increment was previously 0.016 which produced ~30 cycles/sec and
+      // made the limbs look like they were vibrating.
+      this.runPhase += dt * 0.004;
       const sw = Math.sin(this.runPhase * 12) * 0.9;
       // cradling a bundle in her arms — front arm barely swings
       const armFrontAmp = this.p.babyBundle ? 0.25 : 1;

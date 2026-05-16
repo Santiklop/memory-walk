@@ -4,6 +4,122 @@ class MainScene extends Phaser.Scene {
     this.keysCombined = {};
   }
 
+  // Photos load asynchronously in create() via _loadOrientedPhotos() so each
+  // one can be rotated to its correct visual orientation before becoming a
+  // Phaser texture. Phaser's default image loader strips EXIF and offers no
+  // rotation hook, which is why we do it ourselves.
+  // HEIC files are decoded via heic2any (loaded in index.html). iPhone HEIC
+  // photos carry EXIF orientation, which heic2any + 'from-image' will honor —
+  // so rotate stays 0 unless a specific photo needs manual help.
+  static PHOTO_FILES = [
+    // 1 — Katya enters the world
+    { key: 'photo_age0',          path: 'assets/images/age0.jpg',                  rotate:   0 },
+    // 2 — First day of school
+    { key: 'photo_age7',          path: 'assets/images/age7.jpg',                  rotate:   0 },
+    { key: 'photo_age7_2',        path: 'assets/images/age7-2.jpg',                rotate: -90 },
+    // 3 — School graduation
+    { key: 'photo_school_grad_1', path: 'assets/images/School graduation-1.jpg',   rotate:   0 },
+    { key: 'photo_school_grad_2', path: 'assets/images/School graduation-2.jpg',   rotate:   0 },
+    { key: 'photo_school_grad_3', path: 'assets/images/School graduation-3.jpg',   rotate:   0 },
+    // 4 — First year at university
+    { key: 'photo_uni_1',         path: 'assets/images/University-1.jpg',          rotate:   0 },
+    { key: 'photo_uni_2',         path: 'assets/images/University-2.jpg',          rotate:   0 },
+    { key: 'photo_uni_3',         path: 'assets/images/University-3.jpg',          rotate:   0 },
+    { key: 'photo_uni_4',         path: 'assets/images/University-4.jpg',          rotate:   0 },
+    { key: 'photo_uni_5',         path: 'assets/images/University-5.jpg',          rotate:   0 },
+    // 5 — Meets her future husband
+    { key: 'photo_husband_1',     path: 'assets/images/Husband-1.jpg',             rotate:   0 },
+    { key: 'photo_husband_2',     path: 'assets/images/Husband-2.jpg',             rotate:   0 },
+    { key: 'photo_husband_3',     path: 'assets/images/Husband-3.jpg',             rotate:   0 },
+    // 6 — University graduation
+    { key: 'photo_uni_grad_1',    path: 'assets/images/Uni graduation-1.JPG',      rotate:   0 },
+    { key: 'photo_uni_grad_2',    path: 'assets/images/Uni graduation-2.JPG',      rotate:   0 },
+    { key: 'photo_uni_grad_3',    path: 'assets/images/Uni graduation-3.JPG',      rotate:   0 },
+    { key: 'photo_uni_grad_4',    path: 'assets/images/Uni graduation-4.jpg',      rotate:   0 },
+    { key: 'photo_uni_grad_5',    path: 'assets/images/Uni graduation-5.jpg',      rotate:   0 },
+    // 7 — First job post-uni
+    { key: 'photo_after_uni_1',   path: 'assets/images/After Uni-1.JPG',           rotate:   0 },
+    { key: 'photo_after_uni_2',   path: 'assets/images/After-Uni-2.JPG',           rotate:   0 },
+    { key: 'photo_after_uni_3',   path: 'assets/images/After Uni-3.JPG',           rotate:   0 },
+    // 8 — Wedding day
+    { key: 'photo_wedding_1',     path: 'assets/images/Wedding-1.jpg',             rotate:   0 },
+    { key: 'photo_wedding_2',     path: 'assets/images/Wedding-2.JPG',             rotate:   0 },
+    { key: 'photo_wedding_3',     path: 'assets/images/Wedding-3.JPG',             rotate:   0 },
+    { key: 'photo_wedding_4',     path: 'assets/images/Wedding-4.JPG',             rotate:   0 },
+    { key: 'photo_wedding_5',     path: 'assets/images/Wedding-5.jpg',             rotate:   0 },
+    { key: 'photo_wedding_6',     path: 'assets/images/Wedding-6.JPG',             rotate:   0 },
+    { key: 'photo_wedding_7',     path: 'assets/images/Wedding-7.JPG',             rotate:   0 },
+    { key: 'photo_wedding_8',     path: 'assets/images/Wedding-8.JPG',             rotate:   0 },
+    { key: 'photo_wedding_9',     path: 'assets/images/Wedding-9.JPG',             rotate:   0 },
+    { key: 'photo_wedding_10',    path: 'assets/images/Wedding-10.JPG',            rotate:   0 },
+    // 9 — Anna is born (and beyond)
+    { key: 'photo_anna_0',        path: 'assets/images/Anna-0.jpg',                rotate:   0 },
+    { key: 'photo_anna_1',        path: 'assets/images/Anna-1.jpg',                rotate:   0 },
+    { key: 'photo_anna_2',        path: 'assets/images/Anna-2.jpg',                rotate:   0 },
+    { key: 'photo_anna_3',        path: 'assets/images/Anna-3.jpg',                rotate:   0 },
+    { key: 'photo_anna_4',        path: 'assets/images/Anna-4.jpg',                rotate:   0 },
+    { key: 'photo_anna_5',        path: 'assets/images/Anna-5.jpg',                rotate:   0 },
+    { key: 'photo_anna_6',        path: 'assets/images/Anna-6.JPG',                rotate:   0 },
+    // 10 — Hello Belgium
+    { key: 'photo_belgium_1',     path: 'assets/images/Belgium-1.JPG',             rotate:   0 },
+    { key: 'photo_belgium_2',     path: 'assets/images/Belgium-2.JPG',             rotate:   0 },
+    { key: 'photo_belgium_3',     path: 'assets/images/Belgium-3.JPG',             rotate:   0 },
+    { key: 'photo_belgium_4',     path: 'assets/images/Belgium-4.JPG',             rotate:   0 },
+    { key: 'photo_belgium_5',     path: 'assets/images/Belgium-5.JPG',             rotate:   0 },
+    { key: 'photo_belgium_6',     path: 'assets/images/Belgium-6.JPG',             rotate: -90 },
+    { key: 'photo_belgium_7',     path: 'assets/images/Belgium-7.JPG',             rotate:   0 },
+    // 11 — Hello London
+    { key: 'photo_london_1',      path: 'assets/images/London-1.JPG',              rotate:   0 },
+    { key: 'photo_london_2',      path: 'assets/images/London-2.JPG',              rotate:   0 },
+    { key: 'photo_london_3',      path: 'assets/images/London-3.JPG',              rotate:   0 },
+    { key: 'photo_london_4',      path: 'assets/images/London-4.JPG',              rotate:   0 },
+    { key: 'photo_london_5',      path: 'assets/images/London-5.JPG',              rotate:   0 },
+    { key: 'photo_london_6',      path: 'assets/images/London-6.HEIC',             rotate:   0 },
+    { key: 'photo_london_7',      path: 'assets/images/London-7.HEIC',             rotate:   0 },
+    { key: 'photo_london_8',      path: 'assets/images/London-8.HEIC',             rotate:   0 },
+    { key: 'photo_london_9',      path: 'assets/images/London-9.JPG',              rotate:   0 },
+    // 12 — Job at Vodafone
+    { key: 'photo_vodafone_1',    path: 'assets/images/Vodafone-1.JPG',            rotate:   0 },
+    { key: 'photo_vodafone_2',    path: 'assets/images/Vodafone-2.HEIC',           rotate:   0 },
+    { key: 'photo_vodafone_3',    path: 'assets/images/Vodafone-3.HEIC',           rotate:   0 },
+    { key: 'photo_vodafone_4',    path: 'assets/images/Vodafone-4.HEIC',           rotate:   0 },
+    { key: 'photo_vodafone_5',    path: 'assets/images/Vodafone-5.HEIC',           rotate:   0 },
+    { key: 'photo_vodafone_6',    path: 'assets/images/Vodafone-6.HEIC',           rotate:   0 },
+    { key: 'photo_vodafone_7',    path: 'assets/images/Vodafone-7.HEIC',           rotate:   0 },
+    { key: 'photo_vodafone_8',    path: 'assets/images/Vodafone-8.HEIC',           rotate:   0 },
+    // 13 — Hello Amsterdam
+    { key: 'photo_amsterdam_1',   path: 'assets/images/Amsterdam-1.HEIC',          rotate:   0 },
+    { key: 'photo_amsterdam_2',   path: 'assets/images/Amsterdam-2.JPG',           rotate:   0 },
+    { key: 'photo_amsterdam_3',   path: 'assets/images/Amsterdam-3.JPG',           rotate:   0 },
+    { key: 'photo_amsterdam_4',   path: 'assets/images/Amsterdam-4.JPG',           rotate:   0 },
+    { key: 'photo_amsterdam_5',   path: 'assets/images/Amsterdam-5.JPG',           rotate:   0 },
+    { key: 'photo_amsterdam_6',   path: 'assets/images/Amsterdam-6.HEIC',          rotate:   0 },
+    { key: 'photo_amsterdam_7',   path: 'assets/images/Amsterdam-7.JPEG',          rotate:   0 },
+    { key: 'photo_amsterdam_8',   path: 'assets/images/Amsterdam-8.JPG',           rotate:   0 },
+    // 14 — Job at Coty
+    { key: 'photo_coty_0',        path: 'assets/images/Coty-0.HEIC',               rotate:   0 },
+    { key: 'photo_coty_1',        path: 'assets/images/Coty-1.JPG',                rotate:   0 },
+    { key: 'photo_coty_2',        path: 'assets/images/Coty-2.HEIC',               rotate:   0 },
+    { key: 'photo_coty_3',        path: 'assets/images/Coty-3.HEIC',               rotate:   0 },
+    { key: 'photo_coty_4',        path: 'assets/images/Coty-4.HEIC',               rotate:   0 },
+    // 15 — First apartment
+    { key: 'photo_new_apart_0',   path: 'assets/images/New apart-0.HEIC',          rotate:   0 },
+    { key: 'photo_new_apart_1',   path: 'assets/images/New apart-1.HEIC',          rotate:   0 },
+    { key: 'photo_new_apart_2',   path: 'assets/images/New apart-2.HEIC',          rotate:   0 },
+    { key: 'photo_new_apart_3',   path: 'assets/images/new apart-3.JPG',           rotate:   0 },
+    { key: 'photo_new_apart_4',   path: 'assets/images/New apart-4.HEIC',          rotate:   0 },
+    { key: 'photo_new_apart_5',   path: 'assets/images/New apart-5.JPEG',          rotate:   0 },
+    { key: 'photo_new_apart_6',   path: 'assets/images/New apart-6.JPEG',          rotate:   0 },
+    { key: 'photo_new_apart_7',   path: 'assets/images/New apart-7.JPEG',          rotate:   0 },
+    { key: 'photo_new_apart_8',   path: 'assets/images/New apart-8.JPEG',          rotate:   0 },
+    { key: 'photo_new_apart_9',   path: 'assets/images/New apart-9.JPEG',          rotate:   0 },
+    { key: 'photo_new_apart_10',  path: 'assets/images/New apart-10.JPEG',         rotate:   0 },
+    { key: 'photo_new_apart_11',  path: 'assets/images/New apart-11.JPG',          rotate:   0 },
+    // 16 — Today!!!
+    { key: 'photo_today_1',       path: 'assets/images/Today 1.jpg',               rotate:   0 },
+    { key: 'photo_today_2',       path: 'assets/images/Today 2.jpg',               rotate:   0 },
+  ];
+
   create() {
     const { width, height, groundY, viewW, viewH } = WORLD;
 
@@ -46,6 +162,24 @@ class MainScene extends Phaser.Scene {
       const frame = new PhotoFrame(this, m.x, groundY - 340, m);
       this.frames.push(frame);
     });
+
+    // Jump-on buttons — one beneath every milestone frame that has photos to
+    // cycle. The press is gated to fresh landings in MainScene.update so
+    // standing on a button doesn't keep cycling.
+    this.buttonGroup = this.physics.add.staticGroup();
+    this.buttons = [];
+    MILESTONES.forEach((m, i) => {
+      if (!m.photos || m.photos.length === 0) return;
+      const frame = this.frames[i];
+      // Offset the button laterally so it doesn't sit directly under the
+      // floating frame's anchor — feels more like a discoverable object.
+      const btn = new JumpButton(this, m.x + 70, groundY, frame, this.buttonGroup);
+      this.buttons.push(btn);
+    });
+    this.physics.add.collider(this.katya, this.buttonGroup, this._onButtonContact, null, this);
+
+    // Photos are pre-loaded by IntroScene before this scene starts, so
+    // every frame's textures are already in the game-wide TextureManager.
 
     // HUD
     this._buildHUD();
@@ -386,7 +520,16 @@ class MainScene extends Phaser.Scene {
       if (!frame.revealed && Math.abs(katyaX - frame.milestone.x) < 32) {
         frame.reveal();
         this._chime(frame.milestone.accent);
+        // For photo-bearing frames, play the celebratory ding as the photo
+        // itself fades in (matches the iris-reveal delay in PhotoFrame).
+        if (frame.hasPhotos()) {
+          this.time.delayedCall(420, () => this._celebrateSound());
+        }
         this.cameras.main.shake(120, 0.003);
+        // Milestone 4 = "First year at university". The first time Katya
+        // reaches it, swap the background loop out for a 20-second clip of
+        // Leningrad (seconds 24–44), then fade the main loop back in.
+        if (frame.milestone.id === 4) this._playLeningradInterlude();
       }
     }
 
@@ -421,6 +564,187 @@ class MainScene extends Phaser.Scene {
       if (m.x <= x && m.growTo) form = m.growTo;
     }
     return form;
+  }
+
+  // Collider callback fires for every Katya↔button collision step. We use
+  // Katya's dynamic body to detect a fresh landing: `touching.down` true
+  // this frame, `wasTouching.down` false last frame. That filters out
+  // standing-still (both true) and side-bumps (touching.down stays false).
+  _onButtonContact(katyaObj, btnSprite) {
+    const k = this.katya.body;
+    if (!k.touching.down) return;        // not landing on something
+    if (k.wasTouching.down) return;      // was already grounded — not a fresh hop
+    const btn = this.buttons.find(b => b.body === btnSprite);
+    if (btn && btn.press()) this._celebrateSound();
+  }
+
+  // Fetch each photo as a blob, rotate it onto a canvas at the configured
+  // angle, and register that canvas as a Phaser texture. Some scanned
+  // family photos were saved sideways; rather than re-export the files we
+  // apply a per-photo rotation override defined in PHOTO_FILES.
+  // Worker-pool style loader: 4 photos in flight at a time so HEIC decodes
+  // don't all hit the CPU at once and JPEGs queue up through the browser's
+  // per-origin connection limit. Static so the IntroScene can call this
+  // up front and pre-populate the game-wide TextureManager before play
+  // starts; MainScene then sees all textures already loaded.
+  static async loadAllPhotos(scene, onProgress) {
+    const queue = MainScene.PHOTO_FILES.slice();
+    const total = queue.length;
+    let done = 0;
+    const concurrency = 4;
+    const workers = Array.from({ length: concurrency }, async () => {
+      while (queue.length > 0) {
+        const photo = queue.shift();
+        await MainScene.loadOnePhoto(scene, photo);
+        done++;
+        if (onProgress) onProgress(done, total);
+      }
+    });
+    await Promise.all(workers);
+  }
+
+  static async loadOnePhoto(scene, { key, path, rotate }) {
+    if (scene.textures.exists(key)) return;
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      let blob = await res.blob();
+      // HEIC isn't natively decodable in Chrome/Firefox/Edge — run it
+      // through heic2any to produce a JPEG blob first. Some files are
+      // already JPEGs that have been renamed with a .HEIC extension;
+      // heic2any flags those with ERR_USER, in which case we fall through
+      // and use the original blob directly.
+      if (/\.heic$/i.test(path)) {
+        if (typeof heic2any !== 'function') {
+          throw new Error('heic2any not loaded — check the CDN script tag');
+        }
+        try {
+          const converted = await heic2any({ blob, toType: 'image/jpeg', quality: 0.9 });
+          blob = Array.isArray(converted) ? converted[0] : converted;
+        } catch (e) {
+          const msg = (e && (e.message || e.code)) || '';
+          if (!/already browser readable/i.test(msg)) throw e;
+          // already a normal image — leave `blob` untouched.
+        }
+      }
+      // imageOrientation 'from-image' applies EXIF if present; harmless if not.
+      const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+      const canvas = MainScene.rotateBitmapToCanvas(bitmap, rotate);
+      scene.textures.addCanvas(key, canvas);
+    } catch (e) {
+      console.warn('photo load failed:', key, e);
+    }
+  }
+
+  // Rotates the source bitmap to the requested orientation AND downsamples
+  // it. The frame's photo area is only 316×200, so capping the longest side
+  // at 600 px keeps quality more than enough for retina while bringing
+  // per-photo VRAM from ~50 MB (4K iPhone source) down to ~1.4 MB.
+  static rotateBitmapToCanvas(bitmap, rotateDeg) {
+    const MAX_DIM = 600;
+    const r = ((rotateDeg % 360) + 360) % 360;
+    const swap = (r === 90 || r === 270);
+    const finalW = swap ? bitmap.height : bitmap.width;
+    const finalH = swap ? bitmap.width  : bitmap.height;
+    const scale = Math.min(1, MAX_DIM / Math.max(finalW, finalH));
+
+    const c = document.createElement('canvas');
+    c.width  = Math.round(finalW * scale);
+    c.height = Math.round(finalH * scale);
+    const ctx = c.getContext('2d');
+    ctx.translate(c.width / 2, c.height / 2);
+    ctx.rotate(r * Math.PI / 180);
+    const dw = bitmap.width  * scale;
+    const dh = bitmap.height * scale;
+    ctx.drawImage(bitmap, -dw / 2, -dh / 2, dw, dh);
+    return c;
+  }
+
+  // Pauses the background music, plays Leningrad from second 24, stops it
+  // at second 44, then resumes the background loop. Fires exactly once per
+  // session (guarded by _leningradPlayed) — walking back past milestone 4
+  // does not retrigger it, and nothing else can cause Leningrad to play.
+  _playLeningradInterlude() {
+    if (this._leningradPlayed) return;
+    this._leningradPlayed = true;
+    const bgm = window.__bgmAudio;
+    const len = window.__leningradAudio;
+    if (!len) return;
+
+    if (bgm && !bgm.paused) bgm.pause();
+
+    const seekAndPlay = () => {
+      try { len.currentTime = 24; } catch (e) {}
+      len.volume = 0.4;
+      const p = len.play();
+      if (p && p.catch) p.catch(() => {});
+    };
+    if (len.readyState >= 1) {
+      seekAndPlay();
+    } else {
+      len.addEventListener('loadedmetadata', seekAndPlay, { once: true });
+    }
+
+    // Stop based on the audio's own playhead so the full 24→44 segment
+    // plays regardless of scene time drift. Wall-clock fallback in case
+    // timeupdate stops firing.
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      try { len.pause(); } catch (e) {}
+      len.removeEventListener('timeupdate', onTimeUpdate);
+      if (bgm) {
+        const p = bgm.play();
+        if (p && p.catch) p.catch(() => {});
+      }
+    };
+    const onTimeUpdate = () => {
+      if (len.currentTime >= 44) finish();
+    };
+    len.addEventListener('timeupdate', onTimeUpdate);
+    setTimeout(finish, 22000);
+  }
+
+  // Brighter, more festive sound than _chime — plays whenever a photograph
+  // appears in a frame or is swapped via a jump-button.
+  _celebrateSound() {
+    try {
+      const ctx = this.sound.context;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // ascending major arpeggio G5 → G6
+      const notes = [
+        { f: 783.99,  t: 0.00, v: 0.16 }, // G5
+        { f: 987.77,  t: 0.05, v: 0.16 }, // B5
+        { f: 1174.66, t: 0.10, v: 0.17 }, // D6
+        { f: 1567.98, t: 0.18, v: 0.20 }, // G6
+      ];
+      notes.forEach(({ f, t, v }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = f;
+        const start = now + t;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(v, start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.7);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.8);
+      });
+      // a tinkle on top
+      const sparkle = ctx.createOscillator();
+      const sg = ctx.createGain();
+      sparkle.type = 'sine';
+      sparkle.frequency.value = 2093.0; // C7
+      sg.gain.setValueAtTime(0, now + 0.25);
+      sg.gain.linearRampToValueAtTime(0.09, now + 0.27);
+      sg.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      sparkle.connect(sg).connect(ctx.destination);
+      sparkle.start(now + 0.25);
+      sparkle.stop(now + 1.0);
+    } catch (e) {}
   }
 
   _chime() {
