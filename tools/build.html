@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Memory Walk – Single-File Bundler</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #2A1C3F; color: #FAF5E8;
+      font-family: Georgia, serif; min-height: 100vh; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 48px 32px; }
+    h1 { margin: 0 0 12px; color: #FFD86B; font-style: italic; }
+    p { line-height: 1.55; opacity: 0.92; }
+    button { font-family: Georgia, serif; font-size: 18px; padding: 12px 28px;
+      background: #FFD86B; color: #2A1C3F; border: 0; cursor: pointer;
+      border-radius: 6px; font-weight: bold; }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    #log { white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; line-height: 1.55; margin-top: 24px; padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.35); border-radius: 6px;
+      max-height: 60vh; overflow-y: auto; }
+    .err { color: #FF9E9E; }
+    .ok { color: #A8F0B0; }
+    .dim { opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Memory Walk &mdash; Bundler</h1>
+    <p>
+      Builds the entire game (Phaser engine, source files, photos, music) into
+      a single self-contained <code>memory-walk.html</code> file you can email,
+      drop on a USB stick, or commit to GitHub Pages. No server needed to view
+      it &mdash; double-click and play.
+    </p>
+    <p class="dim">
+      Photos are decoded (HEIC&rarr;JPEG), rotated, and downscaled to 600&nbsp;px
+      max at build time, so the runtime needs no decoder libraries. Expect
+      ~20&ndash;25&nbsp;MB output and roughly a minute of build time.
+    </p>
+    <button id="build">Build memory-walk.html</button>
+    <div id="log"></div>
+  </div>
+
+  <!-- HEIC decoder, used here at build time only. Not shipped in the output. -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="build.js"></script>
+</body>
+</html>
