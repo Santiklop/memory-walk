@@ -4,3 +4,7 @@ Thumbs.db
 node_modules/
 .vscode/
 .idea/
+# Claude Code worktree state — local-only
+.claude/
+# Scratch / test artifacts
+.tmp_*

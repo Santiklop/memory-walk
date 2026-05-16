@@ -4,10 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#0a0a0f" />
+  <!-- Hosted as a personal gift — explicitly opt out of every search engine. -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+  <!-- iOS "Add to Home Screen" presentation -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Memory Walk" />
+  <link rel="manifest" href="manifest.json" />
   <title>Memory Walk</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- PIN gate: shown until the right PIN is entered. While visible it covers
+       the canvas, the touch controls, and the hint text. config.js (which
+       boots Phaser) is loaded only after unlock — see pin-gate.js. -->
+  <div id="pin-gate" role="dialog" aria-modal="true" aria-labelledby="pin-title">
+    <div class="pin-card">
+      <h1 id="pin-title">Memory Walk</h1>
+      <p>enter pin to begin</p>
+      <input id="pin-input" type="tel" inputmode="numeric" pattern="[0-9]*"
+             autocomplete="off" autocapitalize="off" maxlength="4"
+             aria-label="PIN" />
+      <div class="pin-hint" id="pin-hint">&nbsp;</div>
+    </div>
+  </div>
+
   <div id="game-container"></div>
   <div id="hint">← → to move · SPACE to jump</div>
 
@@ -34,6 +56,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <!-- HEIC → JPEG decoder for iPhone photos. Most browsers can't decode HEIC
+       natively, so this WASM-backed library does the conversion in the page
+       before we hand the bytes to createImageBitmap. -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 
   <!-- game source -->
   <script src="src/touch.js"></script>
@@ -42,9 +68,12 @@
   <script src="src/background.js"></script>
   <script src="src/character.js"></script>
   <script src="src/photoFrame.js"></script>
+  <script src="src/jumpButton.js"></script>
   <script src="src/obstacles.js"></script>
   <script src="src/scenes/intro.js"></script>
   <script src="src/scenes/main.js"></script>
-  <script src="src/config.js"></script>
+  <!-- pin-gate.js loads src/config.js dynamically after the PIN is accepted,
+       so Phaser never boots (and photos never start fetching) until then. -->
+  <script src="pin-gate.js"></script>
 </body>
 </html>

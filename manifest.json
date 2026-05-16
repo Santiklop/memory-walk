@@ -1,0 +1,11 @@
+{
+  "name": "Memory Walk",
+  "short_name": "Memory Walk",
+  "description": "A stroll through the years, one memory at a time.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#2A1C3F",
+  "theme_color": "#FFD86B"
+}
