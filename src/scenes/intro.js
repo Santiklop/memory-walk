@@ -204,22 +204,27 @@ class IntroScene extends Phaser.Scene {
     // the play() call above. The Leningrad element however isn't played
     // until Katya reaches the University milestone — by then we're well
     // outside any user gesture, so iOS would silently reject the play().
-    // Side-effect-free unlock: start it muted from inside *this* gesture,
-    // pause + rewind + unmute immediately. From now on programmatic
-    // play() on this element works. `muted` is more reliable than
-    // `volume = 0` on iOS — some iOS versions still treat zero-volume
-    // audio as "audible" and refuse to unlock the element.
+    //
+    // Unlock recipe: muted+volume0, play(), then pause + rewind + unmute
+    // SYNCHRONOUSLY in the same tick. Pausing in the play() promise
+    // handler is too late on iOS — the promise can stay pending while the
+    // 6.8 MB file downloads, and during that window the audio plays
+    // audibly even with muted=true on some iOS versions, overlapping the
+    // BGM that's already started. Synchronous pause cancels the output
+    // before it ever reaches the speakers, while still registering the
+    // play() as user-initiated for future programmatic playback.
     const len = window.__leningradAudio;
     if (len) {
       try { len.muted = true; } catch (_) {}
-      const lp = len.play();
-      const reset = () => {
-        try { len.pause(); } catch (_) {}
-        try { len.currentTime = 0; } catch (_) {}
-        try { len.muted = false; } catch (_) {}
-      };
-      if (lp && lp.then) lp.then(reset, reset);
-      else reset();
+      try { len.volume = 0; } catch (_) {}
+      let lp;
+      try { lp = len.play(); } catch (_) {}
+      try { len.pause(); } catch (_) {}
+      try { len.currentTime = 0; } catch (_) {}
+      try { len.muted = false; } catch (_) {}
+      // play() promise rejects with "play() was interrupted by pause()"
+      // — expected, swallow it so it doesn't surface as an error.
+      if (lp && lp.catch) lp.catch(() => {});
     }
 
     this.cameras.main.fadeOut(600, 255, 240, 200);
