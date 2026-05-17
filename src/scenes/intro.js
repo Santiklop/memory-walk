@@ -199,6 +199,29 @@ class IntroScene extends Phaser.Scene {
       }, 60);
     }
 
+    // iOS Safari "media unlock": HTMLMediaElement.play() is blocked unless
+    // it originates from a user gesture. The BGM element is unlocked by
+    // the play() call above. The Leningrad element however isn't played
+    // until Katya reaches the University milestone — by then we're well
+    // outside any user gesture, so iOS would silently reject the play().
+    // Side-effect-free unlock: start it muted from inside *this* gesture,
+    // pause + rewind + unmute immediately. From now on programmatic
+    // play() on this element works. `muted` is more reliable than
+    // `volume = 0` on iOS — some iOS versions still treat zero-volume
+    // audio as "audible" and refuse to unlock the element.
+    const len = window.__leningradAudio;
+    if (len) {
+      try { len.muted = true; } catch (_) {}
+      const lp = len.play();
+      const reset = () => {
+        try { len.pause(); } catch (_) {}
+        try { len.currentTime = 0; } catch (_) {}
+        try { len.muted = false; } catch (_) {}
+      };
+      if (lp && lp.then) lp.then(reset, reset);
+      else reset();
+    }
+
     this.cameras.main.fadeOut(600, 255, 240, 200);
     this.time.delayedCall(650, () => this.scene.start('Main'));
   }
